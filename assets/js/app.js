@@ -1,7 +1,7 @@
 /* ==========================================================================
    Football Master — app logic
-   - Pulls the live Colts @ Chiefs score from ESPN's public scoreboard API
-   - Maps the leader onto the Master / Peon thrones (IND -> MW, KC -> DrJ)
+   - Pulls the live Giants @ Rams score from ESPN's public scoreboard API
+   - Maps the leader onto the Master / Peon thrones (LAR -> MW, NYG -> DrJ)
    - Runs the local voting floor (takes + ballot, persisted in localStorage)
    ========================================================================== */
 (function () {
@@ -10,21 +10,31 @@
   /* ---------------------------------------------------------------- config */
 
   var CONFIG = {
-    eventId: '401872945', // Colts @ Chiefs, Sun Sep 20 2026, 5:15 PM PT
-    summaryUrl: 'https://site.api.espn.com/apis/site/v2/sports/football/nfl/summary?event=401872945',
+    eventId: '401872947', // Giants @ Rams, Mon Sep 21 2026, 5:15 PM PT
+    summaryUrl: 'https://site.api.espn.com/apis/site/v2/sports/football/nfl/summary?event=401872947',
     scoreboardUrl: 'https://site.api.espn.com/apis/site/v2/sports/football/nfl/scoreboard',
     pollMs: 30000,
+    kickoff: '5:15 PM PT',
+    network: 'ESPN & ABC',
     // The whole point of the site: which team crowns which person.
     people: {
-      IND: { who: 'MW', team: 'Indianapolis Colts' },
-      KC: { who: 'DrJ', team: 'Kansas City Chiefs' }
+      LAR: { who: 'MW', team: 'Los Angeles Rams' },
+      NYG: { who: 'DrJ', team: 'New York Giants' }
     },
     gameLinks: {
-      gamecast: 'https://www.espn.com/nfl/game/_/gameId/401872945',
-      boxscore: 'https://www.espn.com/nfl/boxscore/_/gameId/401872945',
-      pbp: 'https://www.espn.com/nfl/playbyplay/_/gameId/401872945'
+      gamecast: 'https://www.espn.com/nfl/game/_/gameId/401872947',
+      boxscore: 'https://www.espn.com/nfl/boxscore/_/gameId/401872947',
+      pbp: 'https://www.espn.com/nfl/playbyplay/_/gameId/401872947'
     }
   };
+
+  /** "Los Angeles Rams leads -> MW is Football Master. ..." — built from the map above. */
+  function houseRule() {
+    return Object.keys(CONFIG.people).map(function (abbr) {
+      var p = CONFIG.people[abbr];
+      return p.team + ' ahead → ' + p.who + ' is Football Master.';
+    }).join(' ');
+  }
 
   var STORE = { takes: 'fm.takes.v1', votes: 'fm.votes.v1', ballot: 'fm.ballot.v1', game: 'fm.game.v1' };
 
@@ -138,8 +148,6 @@
   function resolveThrone(game) {
     var away = game.away;
     var home = game.home;
-    var mwSide = away.abbr === 'IND' ? away : home;
-    var drjSide = home.abbr === 'KC' ? home : away;
     var margin = Math.abs(away.score - home.score);
     var tied = away.score === home.score;
     var leader = tied ? null : (away.score > home.score ? away : home);
@@ -155,9 +163,7 @@
       master: person ? person.who : 'TBD',
       peon: loser ? loser.who : 'TBD',
       masterTeam: leader,
-      peonTeam: trailer,
-      mwSide: mwSide,
-      drjSide: drjSide
+      peonTeam: trailer
     };
 
     var scoreLine = leader
@@ -167,8 +173,8 @@
     if (game.state === 'pre') {
       out.chip = 'Pregame';
       out.headline = 'The throne is still vacant.';
-      out.detail = 'Colts at Chiefs kicks off at 5:15 PM PT on NBC. ' +
-        'Indianapolis leads → MW is Football Master. Kansas City leads → DrJ is Football Master.';
+      out.detail = away.name + ' at ' + home.name + ' kicks off at ' + CONFIG.kickoff +
+        ' on ' + CONFIG.network + '. ' + houseRule();
       out.masterMeta = 'Awaiting kickoff';
       out.peonMeta = 'Awaiting kickoff';
     } else if (game.state === 'post') {
@@ -258,7 +264,7 @@
     });
 
     $('gameState').textContent = game.state === 'in' ? 'Live now' : (game.state === 'post' ? 'Final' : 'Scheduled');
-    $('gameClock').textContent = game.state === 'pre' ? '5:15 PM PT' : (game.detail || game.shortDetail || '');
+    $('gameClock').textContent = game.state === 'pre' ? CONFIG.kickoff : (game.detail || game.shortDetail || '');
     if (game.venue) $('gameVenue').textContent = game.venue;
     if (game.tv) $('gameTv').textContent = game.tv;
 
@@ -272,7 +278,7 @@
     $('navStatus').textContent = game.state === 'in'
       ? 'Live · ' + game.away.abbr + ' ' + game.away.score + ' – ' + game.home.abbr + ' ' + game.home.score
       : (game.state === 'post' ? 'Final · ' + game.away.abbr + ' ' + game.away.score + ' – ' + game.home.abbr + ' ' + game.home.score
-        : 'Kickoff 5:15 PM PT');
+        : 'Kickoff ' + CONFIG.kickoff);
 
     $('updatedStamp').textContent = 'Updated ' + new Date(game.fetchedAt).toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' });
     $('boardNote').hidden = true;
@@ -293,7 +299,7 @@
       $('gameState').textContent = 'Unavailable';
       $('gameClock').textContent = '—';
       $('verdictText').textContent = 'Waiting on a live score.';
-      $('verdictDetail').textContent = 'Indianapolis ahead → MW is Football Master. Kansas City ahead → DrJ is Football Master.';
+      $('verdictDetail').textContent = houseRule();
     }
   }
 
@@ -350,12 +356,12 @@
 
   // Seed debate topics. Scores are demo starting values; real votes stack on top.
   var SEED_TAKES = [
-    { id: 's1', text: 'Mahomes at Arrowhead in prime time is still the safest bet in football.', side: 'DrJ', base: 42, agoH: 3, link: CONFIG.gameLinks.gamecast, linkLabel: 'Gamecast' },
-    { id: 's2', text: 'If Jonathan Taylor gets 20+ carries, Indy controls the clock and MW takes the throne.', side: 'MW', base: 37, agoH: 4, link: CONFIG.gameLinks.boxscore, linkLabel: 'Box score' },
-    { id: 's3', text: 'The Colts pass rush is the real story of this game, not the quarterbacks.', side: 'MW', base: 24, agoH: 6, link: 'https://www.espn.com/nfl/team/_/name/ind/indianapolis-colts', linkLabel: 'Colts hub' },
-    { id: 's4', text: 'Third-down defense decides this one. Whoever gets off the field owns the fourth quarter.', side: null, base: 19, agoH: 8, link: CONFIG.gameLinks.pbp, linkLabel: 'Play-by-play' },
-    { id: 's5', text: 'Kansas City red-zone efficiency has been the difference in every prime-time win.', side: 'DrJ', base: 15, agoH: 10, link: 'https://www.espn.com/nfl/team/_/name/kc/kansas-city-chiefs', linkLabel: 'Chiefs hub' },
-    { id: 's6', text: 'Whoever loses tonight is scrubbing helmets until the rematch. No appeals.', side: null, base: 11, agoH: 12, link: 'https://www.nfl.com/standings/', linkLabel: 'Standings' }
+    { id: 'm1', text: 'Home field at SoFi in prime time is worth more than the spread says. MW sleeps fine tonight.', side: 'MW', base: 41, agoH: 3, link: CONFIG.gameLinks.gamecast, linkLabel: 'Gamecast' },
+    { id: 'm2', text: 'The Giants front seven travels. Pressure up the middle is how DrJ takes this throne.', side: 'DrJ', base: 35, agoH: 4, link: CONFIG.gameLinks.boxscore, linkLabel: 'Box score' },
+    { id: 'm3', text: 'Rams receivers against that secondary is the matchup the whole game turns on.', side: 'MW', base: 26, agoH: 6, link: 'https://www.espn.com/nfl/team/_/name/lar/los-angeles-rams', linkLabel: 'Rams hub' },
+    { id: 'm4', text: 'New York is 1-0 and nobody is talking about it. That ends tonight on ABC.', side: 'DrJ', base: 21, agoH: 7, link: 'https://www.espn.com/nfl/team/_/name/nyg/new-york-giants', linkLabel: 'Giants hub' },
+    { id: 'm5', text: 'Third-down defense decides this one. Whoever gets off the field owns the fourth quarter.', side: null, base: 17, agoH: 9, link: CONFIG.gameLinks.pbp, linkLabel: 'Play-by-play' },
+    { id: 'm6', text: 'Whoever loses tonight is scrubbing helmets until the rematch. No appeals.', side: null, base: 12, agoH: 11, link: 'https://www.nfl.com/standings/', linkLabel: 'Standings' }
   ];
 
   var sortMode = 'hot';

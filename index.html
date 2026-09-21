@@ -4,7 +4,7 @@
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
 <title>Football Master</title>
-<meta name="description" content="The Football Master board - live Colts vs. Chiefs score, the Master/Peon throne, and the community voting floor." />
+<meta name="description" content="The Football Master board - live Giants vs. Rams score, the Master/Peon throne, and the community voting floor." />
 <meta name="color-scheme" content="dark" />
 
 <!-- iOS "Add to Home Screen" support: makes this behave like an app icon instead of a Safari tab -->
@@ -114,7 +114,7 @@
   <section class="hero" id="throne">
     <div class="hero__glow" aria-hidden="true"></div>
     <div class="shell">
-      <p class="eyebrow">Sunday Night Football &middot; Arrowhead Stadium &middot; 5:15 PM PT</p>
+      <p class="eyebrow">Monday Night Football &middot; SoFi Stadium &middot; 5:15 PM PT</p>
       <h1 class="hero__title">The Football Master Board</h1>
       <p class="hero__sub">One game. One throne. The scoreboard decides who rules and who serves.</p>
 
@@ -138,9 +138,9 @@
           <p class="verdict__text" id="verdictText">Loading tonight&rsquo;s game&hellip;</p>
           <p class="verdict__detail" id="verdictDetail">Pulling the live scoreboard.</p>
           <div class="verdict__mini" id="verdictMini" hidden>
-            <span class="verdict__mini-team"><b id="miniAwayAbbr">IND</b> <span id="miniAwayScore">&ndash;</span></span>
+            <span class="verdict__mini-team"><b id="miniAwayAbbr">NYG</b> <span id="miniAwayScore">&ndash;</span></span>
             <span class="verdict__mini-sep">at</span>
-            <span class="verdict__mini-team"><b id="miniHomeAbbr">KC</b> <span id="miniHomeScore">&ndash;</span></span>
+            <span class="verdict__mini-team"><b id="miniHomeAbbr">LAR</b> <span id="miniHomeScore">&ndash;</span></span>
           </div>
         </div>
 
@@ -159,7 +159,7 @@
       </div>
 
       <p class="rulebook">
-        <b>House rule:</b> Indianapolis leads &rarr; <b>MW</b> holds the Football Master spot. Kansas City leads &rarr; <b>DrJ</b> holds it.
+        <b>House rule:</b> Los Angeles leads &rarr; <b>MW</b> holds the Football Master spot. New York leads &rarr; <b>DrJ</b> holds it.
         The other guy scrubs the helmets.
       </p>
     </div>
@@ -178,9 +178,9 @@
 
       <div class="board" id="board" data-state="loading">
         <div class="board__col board__col--team" id="awayCol">
-          <img class="board__logo" id="awayLogo" src="https://a.espncdn.com/i/teamlogos/nfl/500/scoreboard/ind.png" alt="Indianapolis Colts logo" width="96" height="96" />
-          <p class="board__city" id="awayCity">Indianapolis</p>
-          <p class="board__team" id="awayTeam">Colts</p>
+          <img class="board__logo" id="awayLogo" src="https://a.espncdn.com/i/teamlogos/nfl/500/scoreboard/nyg.png" alt="New York Giants logo" width="96" height="96" />
+          <p class="board__city" id="awayCity">New York</p>
+          <p class="board__team" id="awayTeam">Giants</p>
           <p class="board__record" id="awayRecord">&nbsp;</p>
           <p class="board__score" id="awayScore">&ndash;</p>
           <p class="board__tag" id="awayTag" hidden>Leading</p>
@@ -190,14 +190,14 @@
           <p class="board__state" id="gameState">Loading</p>
           <p class="board__clock" id="gameClock">&nbsp;</p>
           <div class="board__bar" aria-hidden="true"><span id="gameBarFill"></span></div>
-          <p class="board__venue" id="gameVenue">Arrowhead Stadium &middot; Kansas City, MO</p>
-          <p class="board__tv" id="gameTv">NBC &amp; Peacock</p>
+          <p class="board__venue" id="gameVenue">SoFi Stadium &middot; Inglewood, CA</p>
+          <p class="board__tv" id="gameTv">ESPN &amp; ABC</p>
         </div>
 
         <div class="board__col board__col--team" id="homeCol">
-          <img class="board__logo" id="homeLogo" src="https://a.espncdn.com/i/teamlogos/nfl/500/scoreboard/kc.png" alt="Kansas City Chiefs logo" width="96" height="96" />
-          <p class="board__city" id="homeCity">Kansas City</p>
-          <p class="board__team" id="homeTeam">Chiefs</p>
+          <img class="board__logo" id="homeLogo" src="https://a.espncdn.com/i/teamlogos/nfl/500/scoreboard/lar.png" alt="Los Angeles Rams logo" width="96" height="96" />
+          <p class="board__city" id="homeCity">Los Angeles</p>
+          <p class="board__team" id="homeTeam">Rams</p>
           <p class="board__record" id="homeRecord">&nbsp;</p>
           <p class="board__score" id="homeScore">&ndash;</p>
           <p class="board__tag" id="homeTag" hidden>Leading</p>
@@ -207,20 +207,20 @@
       <p class="board__note" id="boardNote" hidden></p>
 
       <div class="linkrow">
-        <a class="linkcard" href="https://www.espn.com/nfl/game/_/gameId/401872945" target="_blank" rel="noopener">
+        <a class="linkcard" href="https://www.espn.com/nfl/game/_/gameId/401872947" target="_blank" rel="noopener">
           <span class="linkcard__k">ESPN Gamecast</span><span class="linkcard__v">Live score &amp; drive tracker</span>
         </a>
-        <a class="linkcard" href="https://www.espn.com/nfl/boxscore/_/gameId/401872945" target="_blank" rel="noopener">
+        <a class="linkcard" href="https://www.espn.com/nfl/boxscore/_/gameId/401872947" target="_blank" rel="noopener">
           <span class="linkcard__k">Box Score</span><span class="linkcard__v">Team &amp; player stat lines</span>
         </a>
-        <a class="linkcard" href="https://www.espn.com/nfl/playbyplay/_/gameId/401872945" target="_blank" rel="noopener">
+        <a class="linkcard" href="https://www.espn.com/nfl/playbyplay/_/gameId/401872947" target="_blank" rel="noopener">
           <span class="linkcard__k">Play-by-Play</span><span class="linkcard__v">Every drive, every snap</span>
         </a>
         <a class="linkcard" href="https://www.nfl.com/scores/" target="_blank" rel="noopener">
           <span class="linkcard__k">NFL.com Scores</span><span class="linkcard__v">League-wide scoreboard</span>
         </a>
-        <a class="linkcard" href="https://www.nbc.com/nbc-insider/how-to-watch-colts-vs-chiefs-2026" target="_blank" rel="noopener">
-          <span class="linkcard__k">How to Watch</span><span class="linkcard__v">NBC &amp; Peacock broadcast info</span>
+        <a class="linkcard" href="https://www.therams.com/news/los-angeles-rams-vs-new-york-giants-how-to-watch-listen-to-and-live-stream-week-2-2026-monday-night-football" target="_blank" rel="noopener">
+          <span class="linkcard__k">How to Watch</span><span class="linkcard__v">ESPN, ABC &amp; stream details</span>
         </a>
         <a class="linkcard" href="https://www.espn.com/nfl/scoreboard" target="_blank" rel="noopener">
           <span class="linkcard__k">Around the NFL</span><span class="linkcard__v">All of today&rsquo;s scores</span>
@@ -240,7 +240,7 @@
       <div class="ballot">
         <button class="ballot__side ballot__side--mw" type="button" data-ballot="MW">
           <span class="ballot__who">MW</span>
-          <span class="ballot__team">Indianapolis Colts</span>
+          <span class="ballot__team">Los Angeles Rams</span>
           <span class="ballot__cta">Cast vote</span>
         </button>
         <div class="ballot__meter">
@@ -254,7 +254,7 @@
         </div>
         <button class="ballot__side ballot__side--drj" type="button" data-ballot="DrJ">
           <span class="ballot__who">DrJ</span>
-          <span class="ballot__team">Kansas City Chiefs</span>
+          <span class="ballot__team">New York Giants</span>
           <span class="ballot__cta">Cast vote</span>
         </button>
       </div>

@@ -17,8 +17,8 @@
   --gold-deep:     #b8862b;
   --gold-glow:     rgba(245, 196, 81, .28);
 
-  --ind:           #4b8fd6;   /* Colts blue, brightened for dark UI */
-  --kc:            #e8434f;   /* Chiefs red, brightened for dark UI */
+  --lar:           #4b8fd6;   /* Rams blue, brightened for dark UI */
+  --nyg:           #e8434f;   /* Giants red, brightened for dark UI */
   --live:          #35d07f;
 
   --radius:        18px;
@@ -143,7 +143,7 @@ a { color: inherit; }
   animation: ping 1.8s infinite;
 }
 .pulse[data-state="final"] { background: var(--gold); }
-.pulse[data-state="error"]  { background: var(--kc); }
+.pulse[data-state="error"]  { background: var(--nyg); }
 
 @keyframes ping {
   70%  { box-shadow: 0 0 0 9px rgba(53, 208, 127, 0); }
@@ -374,8 +374,8 @@ a { color: inherit; }
   border-radius: var(--radius);
   border: 1px solid var(--line);
   background:
-    radial-gradient(90% 120% at 0% 0%, rgba(75, 143, 214, .10), transparent 55%),
-    radial-gradient(90% 120% at 100% 0%, rgba(232, 67, 79, .10), transparent 55%),
+    radial-gradient(90% 120% at 0% 0%, rgba(232, 67, 79, .10), transparent 55%),
+    radial-gradient(90% 120% at 100% 0%, rgba(75, 143, 214, .10), transparent 55%),
     linear-gradient(165deg, var(--surface-2), var(--surface));
   box-shadow: var(--shadow);
 }
@@ -395,8 +395,8 @@ a { color: inherit; }
   line-height: 1; margin-top: 6px;
   transition: color .3s var(--ease);
 }
-#awayCol .board__score { color: var(--ind); }
-#homeCol .board__score { color: var(--kc); }
+#awayCol .board__score { color: var(--nyg); }
+#homeCol .board__score { color: var(--lar); }
 #awayCol.is-trailing .board__score,
 #homeCol.is-trailing .board__score { color: var(--text-faint); }
 
@@ -469,13 +469,13 @@ a { color: inherit; }
   transition: transform .25s var(--ease), border-color .25s var(--ease), box-shadow .25s var(--ease);
 }
 .ballot__side:hover { transform: translateY(-3px); box-shadow: var(--shadow-sm); }
-.ballot__side--mw:hover, .ballot__side--mw.is-voted  { border-color: var(--ind); }
-.ballot__side--drj:hover, .ballot__side--drj.is-voted { border-color: var(--kc); }
+.ballot__side--mw:hover, .ballot__side--mw.is-voted  { border-color: var(--lar); }
+.ballot__side--drj:hover, .ballot__side--drj.is-voted { border-color: var(--nyg); }
 .ballot__side.is-voted .ballot__cta { color: var(--gold); }
 
 .ballot__who { font-size: 2.4rem; text-transform: uppercase; }
-.ballot__side--mw .ballot__who  { color: var(--ind); }
-.ballot__side--drj .ballot__who { color: var(--kc); }
+.ballot__side--mw .ballot__who  { color: var(--lar); }
+.ballot__side--drj .ballot__who { color: var(--nyg); }
 .ballot__team { font-size: .82rem; color: var(--text-dim); }
 .ballot__cta {
   margin-top: 8px; font-size: .68rem; font-weight: 700; letter-spacing: .16em;
@@ -485,11 +485,11 @@ a { color: inherit; }
 .ballot__meter { text-align: center; }
 .ballot__bar {
   height: 14px; border-radius: 999px; overflow: hidden;
-  background: var(--kc); border: 1px solid var(--line);
+  background: var(--nyg); border: 1px solid var(--line);
 }
 .ballot__bar span {
   display: block; height: 100%; width: 50%;
-  background: var(--ind);
+  background: var(--lar);
   transition: width .6s var(--ease);
 }
 .ballot__nums {
@@ -534,7 +534,7 @@ a { color: inherit; }
 }
 .vote:hover { color: var(--text); border-color: var(--text-faint); }
 .vote[aria-pressed="true"].vote--up   { color: var(--live); border-color: var(--live); background: rgba(53, 208, 127, .12); }
-.vote[aria-pressed="true"].vote--down { color: var(--kc);   border-color: var(--kc);   background: rgba(232, 67, 79, .12); }
+.vote[aria-pressed="true"].vote--down { color: var(--nyg);   border-color: var(--nyg);   background: rgba(232, 67, 79, .12); }
 
 .take__score {
   font-weight: 700; font-variant-numeric: tabular-nums; font-size: .95rem;
@@ -551,8 +551,8 @@ a { color: inherit; }
   font-size: .62rem; font-weight: 700; letter-spacing: .12em; text-transform: uppercase;
   padding: 3px 9px; border-radius: 999px; border: 1px solid var(--line); color: var(--text-dim);
 }
-.take__badge[data-side="MW"]  { color: var(--ind); border-color: rgba(75, 143, 214, .45); }
-.take__badge[data-side="DrJ"] { color: var(--kc);  border-color: rgba(232, 67, 79, .45); }
+.take__badge[data-side="MW"]  { color: var(--lar); border-color: rgba(75, 143, 214, .45); }
+.take__badge[data-side="DrJ"] { color: var(--nyg);  border-color: rgba(232, 67, 79, .45); }
 .take__badge[data-side="You"] { color: var(--gold); border-color: rgba(245, 196, 81, .45); }
 .take__meta a { color: var(--text-dim); }
 .take__meta a:hover { color: var(--gold); }
