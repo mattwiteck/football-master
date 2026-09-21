@@ -2,17 +2,93 @@
 <html lang="en">
 <head>
 <meta charset="utf-8" />
-<meta name="viewport" content="width=device-width, initial-scale=1" />
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
 <title>Football Master</title>
 <meta name="description" content="The Football Master board - live Colts vs. Chiefs score, the Master/Peon throne, and the community voting floor." />
 <meta name="color-scheme" content="dark" />
+
+<!-- iOS "Add to Home Screen" support: makes this behave like an app icon instead of a Safari tab -->
+<link rel="apple-touch-icon" href="assets/icons/apple-touch-icon.png" />
+<meta name="apple-mobile-web-app-capable" content="yes" />
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+<meta name="apple-mobile-web-app-title" content="Football Master" />
+<meta name="theme-color" content="#070a12" />
+
 <link rel="preconnect" href="https://fonts.googleapis.com" />
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@600;700&amp;family=Inter:wght@400;500;600;700&amp;display=swap" />
 <link rel="stylesheet" href="assets/css/styles.css" />
+
+<!-- Self-contained styling for the iOS "install" banner below — kept inline so it doesn't depend on styles.css -->
+<style>
+  #iosInstallBanner {
+    position: fixed;
+    left: calc(12px + env(safe-area-inset-left));
+    right: calc(12px + env(safe-area-inset-right));
+    bottom: calc(12px + env(safe-area-inset-bottom));
+    z-index: 9999;
+    background: #14141a;
+    border: 1px solid #3a3a44;
+    border-radius: 14px;
+    box-shadow: 0 10px 30px rgba(0,0,0,.45);
+    padding: 14px 16px;
+    font-family: "Inter", system-ui, sans-serif;
+    color: #f4f4f6;
+  }
+  #iosInstallBanner[hidden] { display: none; }
+  .ios-install__inner {
+    display: flex;
+    align-items: flex-start;
+    gap: 12px;
+  }
+  .ios-install__text {
+    margin: 0;
+    font-size: 14px;
+    line-height: 1.45;
+    flex: 1;
+  }
+  .ios-install__text b { color: #e8b923; }
+  .ios-install__share {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 20px;
+    height: 20px;
+    vertical-align: -5px;
+    margin: 0 2px;
+  }
+  .ios-install__close {
+    appearance: none;
+    background: transparent;
+    border: none;
+    color: #a8a8b3;
+    font-size: 20px;
+    line-height: 1;
+    cursor: pointer;
+    padding: 2px 4px;
+  }
+  .ios-install__close:hover,
+  .ios-install__close:focus-visible { color: #f4f4f6; }
+</style>
 </head>
 <body id="top">
 <a class="skip" href="#main">Skip to content</a>
+
+<!-- Shown automatically to iPhone Safari visitors who haven't installed the app yet; hidden for everyone else -->
+<div id="iosInstallBanner" hidden role="dialog" aria-label="Add Football Master to your Home Screen">
+  <div class="ios-install__inner">
+    <p class="ios-install__text">
+      <b>Install this as an app:</b> tap the Share icon
+      <svg class="ios-install__share" viewBox="0 0 24 24" fill="none" stroke="#f4f4f6" stroke-width="1.8" aria-hidden="true">
+        <path d="M12 3v12" stroke-linecap="round" stroke-linejoin="round" />
+        <path d="M8 7l4-4 4 4" stroke-linecap="round" stroke-linejoin="round" />
+        <rect x="5" y="10" width="14" height="11" rx="2" />
+      </svg>
+      at the bottom of Safari, then scroll down and tap <b>Add to Home Screen</b>.
+    </p>
+    <button type="button" class="ios-install__close" id="iosInstallClose" aria-label="Dismiss">&times;</button>
+  </div>
+</div>
 
 <header class="nav">
   <div class="shell nav__inner">
@@ -217,5 +293,35 @@
 </footer>
 
 <script src="assets/js/app.js"></script>
+
+<!-- Shows the "Add to Home Screen" banner only for iPhone/iPad Safari visitors who haven't installed the app yet -->
+<script>
+(function () {
+  try {
+    var ua = window.navigator.userAgent || "";
+    var isIos = /iPad|iPhone|iPod/.test(ua) && !window.MSStream;
+    var isSafari = /Safari/.test(ua) && !/CriOS|FxiOS|OPiOS|EdgiOS|Instagram|FBAN|FBAV/.test(ua);
+    var isStandalone = window.navigator.standalone === true ||
+      (window.matchMedia && window.matchMedia("(display-mode: standalone)").matches);
+    var dismissed = window.localStorage.getItem("fmInstallBannerDismissed") === "1";
+
+    if (isIos && isSafari && !isStandalone && !dismissed) {
+      var banner = document.getElementById("iosInstallBanner");
+      var closeBtn = document.getElementById("iosInstallClose");
+      if (banner) {
+        banner.hidden = false;
+        if (closeBtn) {
+          closeBtn.addEventListener("click", function () {
+            banner.hidden = true;
+            try { window.localStorage.setItem("fmInstallBannerDismissed", "1"); } catch (e) {}
+          });
+        }
+      }
+    }
+  } catch (e) {
+    // If storage or matchMedia is unavailable, just skip the banner rather than breaking the page.
+  }
+})();
+</script>
 </body>
 </html>

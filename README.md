@@ -52,13 +52,24 @@ Opening `index.html` directly from disk also works.
 
 Push to `main`, then in the repo go to **Settings → Pages → Build and deployment**, set **Source: Deploy from a branch**, **Branch: `main` / `/ (root)`**, and save. The site publishes at `https://<user>.github.io/football-master/`.
 
+## Add to Home Screen (iPhone)
+
+The page installs like an app on iOS. In Safari, tap **Share → Add to Home Screen**.
+
+- iPhone/iPad visitors in Safari who haven't installed it yet get a dismissable banner at the bottom with those instructions. It hides itself for desktop, for in-app browsers, for anyone already running it standalone, and for anyone who taps the ✕ (remembered via `fmInstallBannerDismissed` in `localStorage`).
+- The home-screen icon is `assets/icons/apple-touch-icon.png` (180×180).
+- Launched from the Home Screen it runs full-screen with no Safari chrome, so the layout honors `env(safe-area-inset-*)` — the nav clears the notch and the footer and banner clear the home indicator.
+
+Android/Chrome gets a normal bookmark; add a `manifest.webmanifest` if you want an installable PWA there too.
+
 ## Structure
 
 ```
 index.html
 assets/
-  css/styles.css    design tokens, throne cards, scoreboard, feed
-  js/app.js         ESPN fetch + throne logic + voting store
+  css/styles.css                design tokens, throne cards, scoreboard, feed
+  js/app.js                     ESPN fetch + throne logic + voting store
+  icons/apple-touch-icon.png    iOS Home Screen icon (180x180)
 ```
 
 Unofficial fan project. Not affiliated with the NFL, the Colts, the Chiefs, ESPN or NBC.
