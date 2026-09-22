@@ -407,10 +407,7 @@
 
     var syncJob = DB.sync().then(function () {
       // Someone else may have picked, posted or voted since the last tick.
-      renderLedger();
-      renderFeed();
-      renderFanPoll();
-      renderPick();
+      renderIdentity();
     });
 
     return Promise.all([crownJob, upcomingJob, syncJob]).then(function () { btn.disabled = false; });
@@ -715,6 +712,108 @@
     }
   }
 
+  /* ======================================================= NAV SIGN-IN */
+
+  function navAuthOpen(open) {
+    var panel = $('navAuthPanel');
+    var btn = $('navAuthBtn');
+    panel.hidden = !open;
+    btn.setAttribute('aria-expanded', String(!!open));
+    if (open) {
+      renderNavAuth();
+      var first = DB.session ? null : $('navUser');
+      if (first) setTimeout(function () { first.focus(); }, 30);
+    }
+  }
+
+  function renderNavAuth() {
+    var wrap = $('navAuth');
+    var s = DB.session;
+
+    wrap.classList.toggle('is-in', !!s);
+    $('navAuthLabel').textContent = s ? s.who : 'Sign in';
+    $('navAuthForm').hidden = !!s;
+    $('navAuthSigned').hidden = !s;
+
+    if (s) {
+      $('navAuthWho').textContent = s.who;
+      $('navAuthNote').textContent = s.who === CONFIG.upcoming.picker
+        ? 'It is your turn to pick this week.'
+        : CONFIG.upcoming.picker + ' picks this week; you get the other team.';
+    } else {
+      $('navAuthTitle').textContent = DB.online
+        ? 'Sign in to pick, post and vote'
+        : 'Sign in to file a pick';
+    }
+  }
+
+  /** Everything that depends on who is signed in. */
+  function renderIdentity() {
+    renderNavAuth();
+    renderLedger();
+    renderFeed();
+    renderFanPoll();
+    renderPick();
+  }
+
+  function submitLogin(userEl, passEl, errEl, btnEl, onDone) {
+    if (btnEl) btnEl.disabled = true;
+    return DB.login(userEl.value, passEl.value).then(function (s) {
+      if (btnEl) btnEl.disabled = false;
+      if (!s) {
+        errEl.hidden = false;
+        errEl.textContent = DB.online && DB.reachable === false
+          ? 'The sync service did not answer, so the login could not be checked.'
+          : 'That login and password do not match anyone on the roster.';
+        return false;
+      }
+      errEl.hidden = true;
+      passEl.value = '';
+      return DB.sync().then(function () {
+        renderIdentity();
+        if (onDone) onDone();
+        return true;
+      });
+    });
+  }
+
+  function wireNavAuth() {
+    var btn = $('navAuthBtn');
+    var panel = $('navAuthPanel');
+
+    btn.addEventListener('click', function (e) {
+      e.stopPropagation();
+      navAuthOpen(panel.hidden);
+    });
+
+    panel.addEventListener('click', function (e) { e.stopPropagation(); });
+
+    document.addEventListener('click', function () {
+      if (!panel.hidden) navAuthOpen(false);
+    });
+
+    document.addEventListener('keydown', function (e) {
+      if (e.key === 'Escape' && !panel.hidden) {
+        navAuthOpen(false);
+        btn.focus();
+      }
+    });
+
+    $('navAuthForm').addEventListener('submit', function (e) {
+      e.preventDefault();
+      submitLogin($('navUser'), $('navPass'), $('navAuthError'),
+        $('navAuthForm').querySelector('button[type="submit"]'),
+        function () { navAuthOpen(false); });
+    });
+
+    $('navSignOut').addEventListener('click', function () {
+      DB.logout();
+      marked = null;
+      navAuthOpen(false);
+      renderIdentity();
+    });
+  }
+
   /* ============================================================== THE PICK */
 
   function session() { return DB.session; }
@@ -975,9 +1074,7 @@
   function signOut() {
     DB.logout();
     marked = null;
-    renderFeed();
-    renderFanPoll();
-    renderPick();
+    renderIdentity();
   }
 
   /* ============================================================= FAN POLL */
@@ -1014,15 +1111,15 @@
     DB.castFan(choice).then(renderFanPoll, function () { renderFanPoll(); });
   }
 
-  /** Point someone at the login when a write needs an identity. */
+  /** A write needs an identity: open the sign-in right where they are. */
   function nudgeLogin() {
-    var target = $('pick');
-    if (target) target.scrollIntoView({ behavior: 'smooth', block: 'start' });
-    var err = $('authError');
-    if (err && !$('authPanel').hidden) {
-      err.hidden = false;
-      err.textContent = 'Sign in first \u2014 posts and votes are shared, so they need a name on them.';
-    }
+    // Deferred: this runs inside a click, and the document-level handler that
+    // closes the panel is still bubbling. Opening now would be undone instantly.
+    setTimeout(function () { navAuthOpen(true); }, 0);
+    var err = $('navAuthError');
+    err.hidden = false;
+    err.textContent = 'Sign in first \u2014 posts and votes are shared, so they carry your name.';
+    $('navAuth').scrollIntoView({ block: 'nearest' });
   }
 
   /* ========================================================== PEON'S ANTHEM */
@@ -1345,29 +1442,8 @@
   function wirePick() {
     $('authForm').addEventListener('submit', function (e) {
       e.preventDefault();
-      var err = $('authError');
-      var btn = $('authForm').querySelector('button[type="submit"]');
-      btn.disabled = true;
-
-      DB.login($('authUser').value, $('authPass').value).then(function (s) {
-        btn.disabled = false;
-        if (!s) {
-          err.hidden = false;
-          err.textContent = DB.online && DB.reachable === false
-            ? 'The sync service did not answer, so the login could not be checked.'
-            : 'That login and password do not match anyone on the roster.';
-          return;
-        }
-        err.hidden = true;
-        $('authPass').value = '';
-        // Signing in changes what this viewer owns, so redraw everything.
-        DB.sync().then(function () {
-          renderLedger();
-          renderFeed();
-          renderFanPoll();
-          renderPick();
-        });
-      });
+      submitLogin($('authUser'), $('authPass'), $('authError'),
+        $('authForm').querySelector('button[type="submit"]'));
     });
 
     $('signOut').addEventListener('click', signOut);
@@ -1452,15 +1528,14 @@
     });
 
     wirePick();
+    wireNavAuth();
 
     initAnthem();
     DB.loadSession();
+    renderNavAuth();
 
     DB.sync().then(function () {
-      renderFanPoll();
-      renderFeed();
-      renderLedger();
-      renderPick();
+      renderIdentity();
     });
 
     tickCountdown();

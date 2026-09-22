@@ -17,7 +17,7 @@
 <link rel="preconnect" href="https://fonts.googleapis.com" />
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@600;700&amp;family=Caveat:wght@600;700&amp;family=Inter:wght@400;500;600;700&amp;display=swap" />
-<link rel="stylesheet" href="assets/css/styles.css?v=7" />
+<link rel="stylesheet" href="assets/css/styles.css?v=8" />
 
 <!-- Self-contained styling for the iOS "install" banner below — kept inline so it doesn't depend on styles.css -->
 <style>
@@ -107,6 +107,38 @@
     <div class="nav__status">
       <span class="pulse" id="navPulse" data-state="loading" aria-hidden="true"></span>
       <span id="navStatus">Connecting&hellip;</span>
+    </div>
+
+    <!-- Sign in from anywhere: the ballot, a vote or a post can all open this. -->
+    <div class="navauth" id="navAuth">
+      <button class="navauth__btn" id="navAuthBtn" type="button" aria-expanded="false" aria-controls="navAuthPanel">
+        <span class="navauth__dot" id="navAuthDot" aria-hidden="true"></span>
+        <span id="navAuthLabel">Sign in</span>
+      </button>
+
+      <div class="navauth__panel" id="navAuthPanel" hidden>
+        <form class="navauth__form" id="navAuthForm" autocomplete="off">
+          <p class="navauth__title" id="navAuthTitle">Sign in to pick, post and vote</p>
+          <div class="navauth__row">
+            <label for="navUser">Login</label>
+            <input id="navUser" name="user" type="text" autocomplete="username"
+                   autocapitalize="none" autocorrect="off" spellcheck="false" required />
+          </div>
+          <div class="navauth__row">
+            <label for="navPass">Password</label>
+            <input id="navPass" name="pass" type="password" autocomplete="current-password"
+                   autocapitalize="none" autocorrect="off" spellcheck="false" required />
+          </div>
+          <button class="btn btn--gold navauth__submit" type="submit">Sign in</button>
+          <p class="navauth__error" id="navAuthError" role="alert" hidden></p>
+        </form>
+
+        <div class="navauth__signed" id="navAuthSigned" hidden>
+          <p class="navauth__who">Signed in as <b id="navAuthWho">&nbsp;</b></p>
+          <p class="navauth__note" id="navAuthNote">&nbsp;</p>
+          <button class="btn btn--ghost" id="navSignOut" type="button">Sign out</button>
+        </div>
+      </div>
     </div>
   </div>
 </header>
@@ -515,7 +547,7 @@
   </div>
 </footer>
 
-<script src="assets/js/app.js?v=7"></script>
+<script src="assets/js/app.js?v=8"></script>
 
 <!-- Shows the "Add to Home Screen" banner only for iPhone/iPad Safari visitors who haven't installed the app yet -->
 <script>
