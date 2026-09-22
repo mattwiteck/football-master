@@ -587,6 +587,22 @@
       .catch(function () { return null; });
   };
 
+  DB.register = function (user, pass) {
+    if (!DB.online) {
+      return Promise.resolve({ error: 'offline', message: 'Accounts need the sync service.' });
+    }
+    return apiCall('/register', { method: 'POST', body: { user: user, pass: pass } })
+      .then(function (data) {
+        DB.session = { who: data.who, token: data.token, at: Date.now() };
+        save(STORE.session, DB.session);
+        return DB.session;
+      })
+      .catch(function (err) {
+        return { error: (err.data && err.data.error) || err.message,
+                 message: (err.data && err.data.message) || 'That did not work.' };
+      });
+  };
+
   DB.logout = function () {
     DB.session = null;
     try { localStorage.removeItem(STORE.session); } catch (e) { /* ignore */ }
@@ -714,6 +730,24 @@
 
   /* ======================================================= NAV SIGN-IN */
 
+  var navMode = 'signin';   // or 'signup'
+
+  function setNavMode(mode) {
+    navMode = mode;
+    var signup = mode === 'signup';
+    $('navAuthTitle').textContent = signup
+      ? 'Create an account'
+      : (DB.online ? 'Sign in to pick, post and vote' : 'Sign in to file a pick');
+    $('navAuthSubmit').textContent = signup ? 'Create account' : 'Sign in';
+    $('navAuthSwitch').textContent = signup
+      ? 'Already have an account? Sign in'
+      : 'New here? Create an account';
+    $('navAuthHint').hidden = !signup;
+    $('navAuthError').hidden = true;
+    $('navUser').setAttribute('autocomplete', signup ? 'off' : 'username');
+    $('navPass').setAttribute('autocomplete', signup ? 'new-password' : 'current-password');
+  }
+
   function navAuthOpen(open) {
     var panel = $('navAuthPanel');
     var btn = $('navAuthBtn');
@@ -721,6 +755,7 @@
     btn.setAttribute('aria-expanded', String(!!open));
     if (open) {
       renderNavAuth();
+      setNavMode(navMode);
       var first = DB.session ? null : $('navUser');
       if (first) setTimeout(function () { first.focus(); }, 30);
     }
@@ -799,11 +834,37 @@
       }
     });
 
+    $('navAuthSwitch').addEventListener('click', function () {
+      setNavMode(navMode === 'signup' ? 'signin' : 'signup');
+      $('navUser').focus();
+    });
+
     $('navAuthForm').addEventListener('submit', function (e) {
       e.preventDefault();
-      submitLogin($('navUser'), $('navPass'), $('navAuthError'),
-        $('navAuthForm').querySelector('button[type="submit"]'),
-        function () { navAuthOpen(false); });
+      var err = $('navAuthError');
+      var btn = $('navAuthSubmit');
+
+      if (navMode === 'signin') {
+        submitLogin($('navUser'), $('navPass'), err, btn, function () { navAuthOpen(false); });
+        return;
+      }
+
+      btn.disabled = true;
+      DB.register($('navUser').value, $('navPass').value).then(function (result) {
+        btn.disabled = false;
+        if (!result || result.error) {
+          err.hidden = false;
+          err.textContent = (result && result.message) || 'That did not work.';
+          return;
+        }
+        err.hidden = true;
+        $('navPass').value = '';
+        setNavMode('signin');
+        DB.sync().then(function () {
+          renderIdentity();
+          navAuthOpen(false);
+        });
+      });
     });
 
     $('navSignOut').addEventListener('click', function () {
@@ -1298,7 +1359,8 @@
       return {
         id: t.id, text: t.text,
         side: t.by || 'You',            // shared takes carry their author
-        base: 1, createdAt: t.createdAt, link: null, linkLabel: null
+        base: 1, createdAt: t.createdAt, link: null, linkLabel: null,
+        masked: !!t.masked
       };
     });
     return seeded.concat(posted);
@@ -1395,14 +1457,21 @@
         var badge = document.createElement('span');
         badge.className = 'take__badge';
         badge.setAttribute('data-side', take.side);
-        badge.textContent = take.side === 'You' ? 'Your take'
-          : (take.side === 'MW' || take.side === 'DrJ') ? take.side : 'Team ' + take.side;
+        badge.textContent = take.side === 'You' ? 'Your take' : take.side;
         meta.appendChild(badge);
       }
 
       var when = document.createElement('span');
       when.textContent = timeAgo(take.createdAt);
       meta.appendChild(when);
+
+      if (take.masked) {
+        var flag = document.createElement('span');
+        flag.className = 'take__flag';
+        flag.textContent = 'filtered';
+        flag.title = 'A word in this take was replaced by the language filter.';
+        meta.appendChild(flag);
+      }
 
       if (take.link) {
         var a = document.createElement('a');

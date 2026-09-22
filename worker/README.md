@@ -48,6 +48,34 @@ When `wrangler secret put USERS` prompts, paste one line of JSON:
 
 **Choose new passwords here.** The ones currently in `assets/js/app.js` are in a public repo and in git history, so treat them as burned. Secrets set this way are stored by Cloudflare and never appear in the repo or in the browser.
 
+## Accounts
+
+Anyone can create an account from the **Sign in** control in the site header. Self-registered accounts are
+stored in KV with the password **hashed** (PBKDF2-HMAC-SHA256, 100k rounds, random 16-byte salt) — only the
+two founder logins in the `USERS` secret are compared directly.
+
+Rules, all enforced server side:
+
+- names are 3–18 characters, letters/digits/space/`.`/`-`/`_`
+- reserved names (admin, root, DrJ, MW, …) and names already taken are refused
+- passwords are at least 6 characters
+- the roster is capped at 200 accounts
+
+A self-registered user can post takes, vote and use the fan poll. Filing the pick stays restricted to
+`GAMES.picker`, so opening registration does not let a stranger choose your team.
+
+## Language filter
+
+`src/profanity.js` filters both account names and posted takes.
+
+- **Names** use substring matching and are **refused** outright, since a handle is short and deliberate.
+- **Takes** use whole-word matching with common suffixes and are **masked** (`****`) rather than rejected,
+  so a post is never lost; the take carries a `filtered` flag in the UI.
+
+Matching runs on a normalised copy, so `sh1t`, `f.u.c.k`, `f u c k` and `fuuuuck` are all caught, while
+`classic`, `passed`, `Scunthorpe`, `Peacock` and `magna cum laude` are left alone. Edit the `WORDS` and
+`ALLOW` lists at the top of that file; `node test/accounts-test.mjs` covers both directions.
+
 ## Each week
 
 Edit the `GAMES` block in `wrangler.toml` and run `npx wrangler@4 deploy`:
@@ -71,6 +99,7 @@ GAMES = '''{
 | --- | --- | --- |
 | `GET /state?game=<id>` | public | the whole record plus the rules for that game |
 | `POST /login` | public | `{user, pass}` → `{token, who, exp}` |
+| `POST /register` | public | `{user, pass}` → creates an account and signs it in |
 | `POST /pick` | token | `{game, team}` — checks turn and lock, appends to the ledger |
 | `POST /take` | token | `{game, text}` — trimmed to 140 chars, capped at 200 takes |
 | `POST /vote` | token | `{game, id, dir}` where dir is `1`, `-1` or `0` |

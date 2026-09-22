@@ -17,7 +17,7 @@
 <link rel="preconnect" href="https://fonts.googleapis.com" />
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@600;700&amp;family=Caveat:wght@600;700&amp;family=Inter:wght@400;500;600;700&amp;display=swap" />
-<link rel="stylesheet" href="assets/css/styles.css?v=8" />
+<link rel="stylesheet" href="assets/css/styles.css?v=9" />
 
 <!-- Self-contained styling for the iOS "install" banner below — kept inline so it doesn't depend on styles.css -->
 <style>
@@ -129,8 +129,10 @@
             <input id="navPass" name="pass" type="password" autocomplete="current-password"
                    autocapitalize="none" autocorrect="off" spellcheck="false" required />
           </div>
-          <button class="btn btn--gold navauth__submit" type="submit">Sign in</button>
+          <button class="btn btn--gold navauth__submit" id="navAuthSubmit" type="submit">Sign in</button>
           <p class="navauth__error" id="navAuthError" role="alert" hidden></p>
+          <p class="navauth__hint" id="navAuthHint">Names are public and run through a language filter.</p>
+          <button class="navauth__switch" id="navAuthSwitch" type="button">New here? Create an account</button>
         </form>
 
         <div class="navauth__signed" id="navAuthSigned" hidden>
@@ -354,6 +356,7 @@
             </div>
             <button class="btn btn--gold" type="submit">Verify &amp; open ballot</button>
           </form>
+          <p class="pick__hint">No account? Use <b>Sign in</b> at the top right to create one.</p>
           <p class="auth__error" id="authError" role="alert" hidden></p>
         </div>
 
@@ -547,7 +550,7 @@
   </div>
 </footer>
 
-<script src="assets/js/app.js?v=8"></script>
+<script src="assets/js/app.js?v=9"></script>
 
 <!-- Shows the "Add to Home Screen" banner only for iPhone/iPad Safari visitors who haven't installed the app yet -->
 <script>

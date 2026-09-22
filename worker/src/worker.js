@@ -13,6 +13,7 @@
 
    Routes
      GET  /state?game=<id>   public   the whole record
+     POST /register          public   {user, pass} -> {token, who, exp}
      POST /login             public   {user, pass} -> {token, who, exp}
      POST /pick              token    {game, team}
      POST /take              token    {game, text}
@@ -20,9 +21,24 @@
      POST /fan               token    {game, team}
    ========================================================================== */
 
+import { findProfanity, maskProfanity } from './profanity.js';
+
 const TOKEN_TTL_MS = 30 * 24 * 60 * 60 * 1000;   // 30 days
 const MAX_TAKE_LEN = 140;
 const MAX_TAKES = 200;
+
+const NAME_MIN = 3;
+const NAME_MAX = 18;
+const PASS_MIN = 6;
+const MAX_ACCOUNTS = 200;
+const PBKDF2_ROUNDS = 100000;
+
+// Names nobody gets to register: the founders and the usual impersonations.
+const RESERVED = [
+  'admin', 'administrator', 'root', 'owner', 'moderator', 'mod', 'system',
+  'footballmaster', 'football master', 'master', 'peon', 'claude', 'null',
+  'undefined', 'drj', 'mw'
+];
 
 /* ------------------------------------------------------------------ utils */
 
@@ -78,6 +94,60 @@ async function readToken(secret, token) {
   }
 }
 
+/* Self-registered accounts live in KV, so their passwords are hashed.
+   The two founder logins stay in the USERS secret and are compared directly. */
+
+async function pbkdf2(password, saltBytes) {
+  const key = await crypto.subtle.importKey(
+    'raw', enc.encode(password), { name: 'PBKDF2' }, false, ['deriveBits']
+  );
+  const bits = await crypto.subtle.deriveBits(
+    { name: 'PBKDF2', salt: saltBytes, iterations: PBKDF2_ROUNDS, hash: 'SHA-256' },
+    key, 256
+  );
+  return new Uint8Array(bits);
+}
+
+async function hashPassword(password) {
+  const salt = crypto.getRandomValues(new Uint8Array(16));
+  const hash = await pbkdf2(password, salt);
+  return { salt: b64url(salt), hash: b64url(hash) };
+}
+
+async function verifyPassword(password, record) {
+  if (!record || !record.salt || !record.hash) return false;
+  const hash = await pbkdf2(password, unb64url(record.salt));
+  return sameString(b64url(hash), record.hash);
+}
+
+async function readAccounts(env) {
+  return (await env.FM.get('accounts', 'json')) || {};
+}
+
+async function writeAccounts(env, accounts) {
+  await env.FM.put('accounts', JSON.stringify(accounts));
+}
+
+/** Shared rules for a requested display name. */
+function checkName(raw) {
+  const name = String(raw || '').trim();
+  const key = name.toLowerCase();
+
+  if (name.length < NAME_MIN || name.length > NAME_MAX) {
+    return { error: 'name_length', message: `Pick a name between ${NAME_MIN} and ${NAME_MAX} characters.` };
+  }
+  if (!/^[a-z0-9][a-z0-9 ._-]*$/i.test(name)) {
+    return { error: 'name_charset', message: 'Letters, numbers, spaces, dots, dashes and underscores only.' };
+  }
+  if (RESERVED.includes(key)) {
+    return { error: 'name_reserved', message: 'That name is reserved. Pick another.' };
+  }
+  if (findProfanity(name, true).length) {   // names use the stricter substring check
+    return { error: 'name_language', message: 'That name trips the language filter. Pick another.' };
+  }
+  return { name, key };
+}
+
 function cors(env, extra = {}) {
   return {
     'Access-Control-Allow-Origin': env.ALLOW_ORIGIN || '*',
@@ -129,12 +199,59 @@ async function handleLogin(request, env) {
 
   const key = String(user || '').trim().toLowerCase();
   const entry = users[key];
-  if (!entry || !sameString(String(pass || ''), String(entry.pass))) {
+
+  // Founder accounts from the secret.
+  if (entry) {
+    if (!sameString(String(pass || ''), String(entry.pass))) {
+      return json(env, { error: 'bad_credentials' }, 401);
+    }
+    const token = await mintToken(env.TOKEN_SECRET, entry.who);
+    return json(env, { token, who: entry.who, exp: Date.now() + TOKEN_TTL_MS });
+  }
+
+  // Self-registered accounts from KV.
+  const accounts = await readAccounts(env);
+  const account = accounts[key];
+  if (!account || !(await verifyPassword(String(pass || ''), account))) {
     return json(env, { error: 'bad_credentials' }, 401);
   }
 
-  const token = await mintToken(env.TOKEN_SECRET, entry.who);
-  return json(env, { token, who: entry.who, exp: Date.now() + TOKEN_TTL_MS });
+  const token = await mintToken(env.TOKEN_SECRET, account.who);
+  return json(env, { token, who: account.who, exp: Date.now() + TOKEN_TTL_MS });
+}
+
+async function handleRegister(request, env) {
+  const { user, pass } = await request.json().catch(() => ({}));
+
+  const checked = checkName(user);
+  if (checked.error) return json(env, { error: checked.error, message: checked.message }, 400);
+
+  const password = String(pass || '');
+  if (password.length < PASS_MIN) {
+    return json(env, { error: 'pass_length', message: `Passwords need at least ${PASS_MIN} characters.` }, 400);
+  }
+
+  // A founder login must never be shadowed by a self-registered one.
+  let founders = {};
+  try { founders = JSON.parse(env.USERS || '{}'); } catch (err) { founders = {}; }
+  if (founders[checked.key]) {
+    return json(env, { error: 'name_taken', message: 'That name is already taken.' }, 409);
+  }
+
+  const accounts = await readAccounts(env);
+  if (accounts[checked.key]) {
+    return json(env, { error: 'name_taken', message: 'That name is already taken.' }, 409);
+  }
+  if (Object.keys(accounts).length >= MAX_ACCOUNTS) {
+    return json(env, { error: 'full', message: 'The roster is full.' }, 403);
+  }
+
+  const { salt, hash } = await hashPassword(password);
+  accounts[checked.key] = { who: checked.name, salt, hash, createdAt: Date.now() };
+  await writeAccounts(env, accounts);
+
+  const token = await mintToken(env.TOKEN_SECRET, checked.name);
+  return json(env, { token, who: checked.name, exp: Date.now() + TOKEN_TTL_MS, created: true });
 }
 
 async function requireAuth(request, env) {
@@ -181,16 +298,23 @@ async function handleTake(request, env, auth) {
   const clean = String(text || '').trim().slice(0, MAX_TAKE_LEN);
   if (!game || !clean) return json(env, { error: 'bad_request' }, 400);
 
+  const filtered = maskProfanity(clean);
+
   const record = await readRecord(env, game);
   record.takes.push({
     id: 'r' + Date.now().toString(36) + Math.random().toString(36).slice(2, 6),
-    text: clean,
+    text: filtered.text,
     by: auth.who,
+    masked: filtered.masked.length > 0,
     createdAt: Date.now()
   });
   if (record.takes.length > MAX_TAKES) record.takes = record.takes.slice(-MAX_TAKES);
 
-  return json(env, { ok: true, state: await writeRecord(env, game, record) });
+  return json(env, {
+    ok: true,
+    masked: filtered.masked.length > 0,
+    state: await writeRecord(env, game, record)
+  });
 }
 
 async function handleVote(request, env, auth) {
@@ -256,6 +380,7 @@ export default {
 
     if (request.method !== 'POST') return json(env, { error: 'not_found' }, 404);
     if (path === '/login') return handleLogin(request, env);
+    if (path === '/register') return handleRegister(request, env);
 
     const auth = await requireAuth(request, env);
     if (!auth) return json(env, { error: 'unauthorized' }, 401);
