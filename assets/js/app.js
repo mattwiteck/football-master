@@ -1,8 +1,14 @@
 /* ==========================================================================
    Football Master — app logic
-   - Pulls the live Giants @ Rams score from ESPN's public scoreboard API
-   - Maps the leader onto the Master / Peon thrones (LAR -> MW, NYG -> DrJ)
-   - Runs the local voting floor (takes + ballot, persisted in localStorage)
+
+   Two games are in play at once:
+     CONFIG.crown    the settled game that decided who wears the crown
+                     (drives the thrones and the peon's tribute song)
+     CONFIG.upcoming the next game, which is what gets picked and voted on
+
+   Everything else — the pick ballot, the ledger, the fan poll, the takes —
+   hangs off CONFIG.upcoming and is keyed by its event id, so rolling the
+   site to next week's game is a config change, not a code change.
    ========================================================================== */
 (function () {
   'use strict';
@@ -10,22 +16,51 @@
   /* ---------------------------------------------------------------- config */
 
   var CONFIG = {
-    eventId: '401872947', // Giants @ Rams, Mon Sep 21 2026, 5:15 PM PT
-    summaryUrl: 'https://site.api.espn.com/apis/site/v2/sports/football/nfl/summary?event=401872947',
+    // ---- the game already in the books: Giants at Rams, Mon Sep 21 2026
+    crown: {
+      eventId: '401872947',
+      summaryUrl: 'https://site.api.espn.com/apis/site/v2/sports/football/nfl/summary?event=401872947',
+      label: 'Monday Night Football',
+      people: {
+        LAR: { who: 'MW', team: 'Los Angeles Rams' },
+        NYG: { who: 'DrJ', team: 'New York Giants' }
+      }
+    },
+
+    // ---- the game being picked: Falcons at Packers, Thu Sep 24 2026
+    upcoming: {
+      eventId: '401872948',
+      summaryUrl: 'https://site.api.espn.com/apis/site/v2/sports/football/nfl/summary?event=401872948',
+      label: 'Thursday Night Football',
+      kickoffISO: '2026-09-25T00:15Z',   // 5:15 PM PT / 8:15 PM ET
+      kickoffLabel: '5:15 PM PT',
+      network: 'Prime Video',
+      lockMinutesBefore: 120,            // ballot seals two hours before kickoff
+      picker: 'DrJ',                     // whose turn it is to choose this week
+      rival: 'MW',                       // who inherits the other team
+      teams: {
+        ATL: { city: 'Atlanta', name: 'Falcons', full: 'Atlanta Falcons',
+               logo: 'https://a.espncdn.com/i/teamlogos/nfl/500/scoreboard/atl.png' },
+        GB:  { city: 'Green Bay', name: 'Packers', full: 'Green Bay Packers',
+               logo: 'https://a.espncdn.com/i/teamlogos/nfl/500/scoreboard/gb.png' }
+      },
+      gameLinks: {
+        gamecast: 'https://www.espn.com/nfl/game/_/gameId/401872948',
+        boxscore: 'https://www.espn.com/nfl/boxscore/_/gameId/401872948',
+        pbp: 'https://www.espn.com/nfl/playbyplay/_/gameId/401872948'
+      }
+    },
+
     scoreboardUrl: 'https://site.api.espn.com/apis/site/v2/sports/football/nfl/scoreboard',
     pollMs: 30000,
-    kickoff: '5:15 PM PT',
-    network: 'ESPN & ABC',
-    // The whole point of the site: which team crowns which person.
-    people: {
-      LAR: { who: 'MW', team: 'Los Angeles Rams' },
-      NYG: { who: 'DrJ', team: 'New York Giants' }
+
+    // Cosmetic gate, not security: this file is public, so treat it as a
+    // "who are you" prompt between two friends, nothing more.
+    users: {
+      jjw007: { pass: 'mattisgreat', who: 'DrJ' },
+      matt:   { pass: 'matt1234',    who: 'MW' }
     },
-    gameLinks: {
-      gamecast: 'https://www.espn.com/nfl/game/_/gameId/401872947',
-      boxscore: 'https://www.espn.com/nfl/boxscore/_/gameId/401872947',
-      pbp: 'https://www.espn.com/nfl/playbyplay/_/gameId/401872947'
-    },
+
     // The peon's tribute song. Drop the recording in assets/audio/ using any
     // of these extensions — the page finds whichever one is actually there.
     anthem: {
@@ -35,15 +70,18 @@
     }
   };
 
-  /** "Los Angeles Rams leads -> MW is Football Master. ..." — built from the map above. */
-  function houseRule() {
-    return Object.keys(CONFIG.people).map(function (abbr) {
-      var p = CONFIG.people[abbr];
-      return p.team + ' ahead → ' + p.who + ' is Football Master.';
-    }).join(' ');
-  }
+  var EVT = CONFIG.upcoming.eventId;
 
-  var STORE = { takes: 'fm.takes.v1', votes: 'fm.votes.v1', ballot: 'fm.ballot.v1', game: 'fm.game.v1' };
+  var STORE = {
+    takes:   'fm.takes.v1',
+    votes:   'fm.votes.v1',
+    session: 'fm.session.v1',
+    fan:     'fm.fanpoll.' + EVT,   // per-game so next week starts clean
+    pick:    'fm.pick.' + EVT,
+    ledger:  'fm.ledger.' + EVT,
+    crown:   'fm.game.' + CONFIG.crown.eventId,
+    upcoming:'fm.game.' + EVT
+  };
 
   var $ = function (id) { return document.getElementById(id); };
 
@@ -61,12 +99,20 @@
   function save(key, value) {
     try {
       localStorage.setItem(key, JSON.stringify(value));
+      return true;
     } catch (err) {
-      /* private mode / blocked storage — the UI still works, it just forgets */
+      return false;   // private mode / blocked storage: the UI still works, it just forgets
     }
   }
 
-  /* ============================================================== LIVE GAME */
+  function houseRule() {
+    return Object.keys(CONFIG.crown.people).map(function (abbr) {
+      var p = CONFIG.crown.people[abbr];
+      return p.team + ' ahead → ' + p.who + ' is Football Master.';
+    }).join(' ');
+  }
+
+  /* ============================================================ SCORE FEED */
 
   /** Normalize either ESPN payload shape into one flat game object. */
   function parseCompetition(comp) {
@@ -102,6 +148,7 @@
     return {
       away: away,
       home: home,
+      date: comp.date || '',
       state: type.state || 'pre',          // 'pre' | 'in' | 'post'
       completed: !!type.completed,
       detail: type.detail || type.shortDetail || '',
@@ -112,8 +159,8 @@
     };
   }
 
-  function fetchGame() {
-    return fetch(CONFIG.summaryUrl, { cache: 'no-store' })
+  function fetchGame(cfg) {
+    return fetch(cfg.summaryUrl, { cache: 'no-store' })
       .then(function (res) {
         if (!res.ok) throw new Error('summary ' + res.status);
         return res.json();
@@ -141,26 +188,27 @@
           })
           .then(function (data) {
             var events = (data && data.events) || [];
-            var event = null;
             for (var i = 0; i < events.length; i++) {
-              if (events[i].id === CONFIG.eventId) { event = events[i]; break; }
+              if (events[i].id === cfg.eventId) return parseCompetition(events[i].competitions[0]);
             }
-            if (!event) throw new Error('game not on today’s scoreboard');
-            return parseCompetition(event.competitions[0]);
+            throw new Error('game not on the scoreboard');
           });
       });
   }
 
+  /* ================================================== THE CROWN (settled) */
+
   /** Who is Master, who is Peon, and how do we say it. */
   function resolveThrone(game) {
+    var people = CONFIG.crown.people;
     var away = game.away;
     var home = game.home;
     var margin = Math.abs(away.score - home.score);
     var tied = away.score === home.score;
     var leader = tied ? null : (away.score > home.score ? away : home);
     var trailer = tied ? null : (leader === away ? home : away);
-    var person = leader ? CONFIG.people[leader.abbr] : null;
-    var loser = trailer ? CONFIG.people[trailer.abbr] : null;
+    var person = leader ? people[leader.abbr] : null;
+    var loser = trailer ? people[trailer.abbr] : null;
 
     var out = {
       state: game.state,
@@ -180,8 +228,7 @@
     if (game.state === 'pre') {
       out.chip = 'Pregame';
       out.headline = 'The throne is still vacant.';
-      out.detail = away.name + ' at ' + home.name + ' kicks off at ' + CONFIG.kickoff +
-        ' on ' + CONFIG.network + '. ' + houseRule();
+      out.detail = houseRule();
       out.masterMeta = 'Awaiting kickoff';
       out.peonMeta = 'Awaiting kickoff';
     } else if (game.state === 'post') {
@@ -192,7 +239,7 @@
         out.masterMeta = 'Tie game';
         out.peonMeta = 'Tie game';
       } else {
-        out.headline = '<b>' + out.master + '</b> has locked in the Football Master spot.';
+        out.headline = '<b>' + out.master + '</b> holds the Football Master spot.';
         out.detail = 'Final: ' + scoreLine + '. ' + out.peon + ' takes the Peon seat.';
         out.masterMeta = 'Won by ' + margin;
         out.peonMeta = 'Lost by ' + margin;
@@ -231,17 +278,12 @@
     }
   }
 
-  function renderGame(game) {
+  function renderCrown(game) {
     var verdict = resolveThrone(game);
-    var board = $('board');
 
-    board.setAttribute('data-state', game.state);
-
-    // Thrones
     setThrone('master', verdict.master, verdict.masterMeta, verdict.masterTeam);
     setThrone('peon', verdict.peon, verdict.peonMeta, verdict.peonTeam);
 
-    // Verdict panel
     $('verdictChip').textContent = verdict.chip;
     $('verdictChip').setAttribute('data-state', game.state);
     $('verdictText').innerHTML = verdict.headline;
@@ -252,45 +294,79 @@
     $('miniHomeAbbr').textContent = game.home.abbr;
     $('miniHomeScore').textContent = game.home.score;
 
-    // Scoreboard
+    if (game.state === 'post' && verdict.leader) {
+      $('crownedLine').innerHTML = 'Crowned on ' + CONFIG.crown.label + ': <b>' +
+        verdict.leader.location + ' ' + verdict.leader.score + '–' + verdict.trailer.score + ' ' +
+        verdict.trailer.location + '</b>';
+    }
+
+    castAnthem(verdict, game);
+  }
+
+  /* ================================================ THE UPCOMING GAME */
+
+  function kickoffMs(game) {
+    var iso = (game && game.date) || CONFIG.upcoming.kickoffISO;
+    var t = Date.parse(iso);
+    return isNaN(t) ? Date.parse(CONFIG.upcoming.kickoffISO) : t;
+  }
+
+  function lockMs(game) {
+    return kickoffMs(game) - CONFIG.upcoming.lockMinutesBefore * 60000;
+  }
+
+  var latestUpcoming = null;
+
+  function renderUpcoming(game) {
+    latestUpcoming = game;
+    var board = $('board');
+    board.setAttribute('data-state', game.state);
+
+    var leader = game.away.score === game.home.score ? null
+      : (game.away.score > game.home.score ? game.away : game.home);
+
     ['away', 'home'].forEach(function (side) {
       var team = game[side];
       var col = $(side === 'away' ? 'awayCol' : 'homeCol');
-      $(side + 'Logo').src = team.logo || $(side + 'Logo').src;
+      if (team.logo) $(side + 'Logo').src = team.logo;
       $(side + 'Logo').alt = team.displayName + ' logo';
       $(side + 'City').textContent = team.location;
       $(side + 'Team').textContent = team.name;
       $(side + 'Record').textContent = team.record || ' ';
       $(side + 'Score').textContent = game.state === 'pre' ? '–' : team.score;
 
-      var leading = verdict.leader && verdict.leader.abbr === team.abbr;
       var tag = $(side + 'Tag');
-      tag.hidden = !(leading && game.state !== 'pre');
+      var leading = leader && leader.abbr === team.abbr && game.state !== 'pre';
+      tag.hidden = !leading;
       tag.textContent = game.state === 'post' ? 'Winner' : 'Leading';
-      col.classList.toggle('is-trailing', game.state !== 'pre' && !!verdict.trailer && verdict.trailer.abbr === team.abbr);
+      col.classList.toggle('is-trailing',
+        game.state !== 'pre' && !!leader && leader.abbr !== team.abbr);
     });
 
-    $('gameState').textContent = game.state === 'in' ? 'Live now' : (game.state === 'post' ? 'Final' : 'Scheduled');
-    $('gameClock').textContent = game.state === 'pre' ? CONFIG.kickoff : (game.detail || game.shortDetail || '');
+    $('gameState').textContent = game.state === 'in' ? 'Live now'
+      : (game.state === 'post' ? 'Final' : 'Scheduled');
+    $('gameClock').textContent = game.state === 'pre'
+      ? CONFIG.upcoming.kickoffLabel : (game.detail || game.shortDetail || '');
     if (game.venue) $('gameVenue').textContent = game.venue;
     if (game.tv) $('gameTv').textContent = game.tv;
 
     var pct = game.state === 'post' ? 100 : Math.min(100, Math.round(((game.period || 0) / 4) * 100));
     $('gameBarFill').style.width = (game.state === 'pre' ? 0 : pct) + '%';
 
-    // Nav pill
     var pulse = $('navPulse');
-    var navState = game.state === 'in' ? 'live' : (game.state === 'post' ? 'final' : 'idle');
-    pulse.setAttribute('data-state', navState);
-    $('navStatus').textContent = game.state === 'in'
-      ? 'Live · ' + game.away.abbr + ' ' + game.away.score + ' – ' + game.home.abbr + ' ' + game.home.score
-      : (game.state === 'post' ? 'Final · ' + game.away.abbr + ' ' + game.away.score + ' – ' + game.home.abbr + ' ' + game.home.score
-        : 'Kickoff ' + CONFIG.kickoff);
+    pulse.setAttribute('data-state',
+      game.state === 'in' ? 'live' : (game.state === 'post' ? 'final' : 'idle'));
+    $('navStatus').textContent = game.state === 'pre'
+      ? 'Thu · ' + CONFIG.upcoming.kickoffLabel
+      : (game.state === 'in' ? 'Live · ' : 'Final · ') +
+        game.away.abbr + ' ' + game.away.score + ' – ' + game.home.abbr + ' ' + game.home.score;
 
-    castAnthem(verdict, game);
-
-    $('updatedStamp').textContent = 'Updated ' + new Date(game.fetchedAt).toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' });
+    $('updatedStamp').textContent = 'Updated ' +
+      new Date(game.fetchedAt).toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' });
     $('boardNote').hidden = true;
+
+    tickCountdown();
+    renderPick();
   }
 
   function renderError(err, cached) {
@@ -299,78 +375,564 @@
 
     var note = $('boardNote');
     note.hidden = false;
-    note.innerHTML = 'Live score feed unreachable (' + String(err.message || err) + '). ' +
-      (cached ? 'Showing the last score this browser saw. ' : '') +
-      'Check the <a href="' + CONFIG.gameLinks.gamecast + '" target="_blank" rel="noopener">ESPN Gamecast</a> ' +
+    note.innerHTML = 'Live feed unreachable (' + String(err.message || err) + '). ' +
+      (cached ? 'Showing the last data this browser saw. ' : '') +
+      'Check the <a href="' + CONFIG.upcoming.gameLinks.gamecast + '" target="_blank" rel="noopener">ESPN Gamecast</a> ' +
       'or <a href="https://www.nfl.com/scores/" target="_blank" rel="noopener">NFL.com</a>.';
-
-    if (!cached) {
-      $('gameState').textContent = 'Unavailable';
-      $('gameClock').textContent = '—';
-      $('verdictText').textContent = 'Waiting on a live score.';
-      $('verdictDetail').textContent = houseRule();
-    }
   }
 
   function refresh() {
     var btn = $('refreshBtn');
     btn.disabled = true;
-    return fetchGame()
-      .then(function (game) {
-        save(STORE.game, game);
-        renderGame(game);
-      })
+
+    var crownJob = fetchGame(CONFIG.crown)
+      .then(function (game) { save(STORE.crown, game); renderCrown(game); })
+      .catch(function () {
+        var cached = load(STORE.crown, null);
+        if (cached) renderCrown(cached);
+      });
+
+    var upcomingJob = fetchGame(CONFIG.upcoming)
+      .then(function (game) { save(STORE.upcoming, game); renderUpcoming(game); })
       .catch(function (err) {
-        var cached = load(STORE.game, null);
-        if (cached) renderGame(cached);
+        var cached = load(STORE.upcoming, null);
+        if (cached) renderUpcoming(cached);
         renderError(err, !!cached);
-      })
-      .then(function () { btn.disabled = false; });
+      });
+
+    return Promise.all([crownJob, upcomingJob]).then(function () { btn.disabled = false; });
   }
 
-  /* ================================================================ BALLOT */
+  /* ================================================================ CLOCK */
 
-  function renderBallot() {
-    var b = load(STORE.ballot, { MW: 0, DrJ: 0, choice: null });
-    var total = b.MW + b.DrJ;
-    var mwPct = total ? Math.round((b.MW / total) * 100) : 50;
+  function pad(n) { return (n < 10 ? '0' : '') + n; }
 
-    $('ballotFill').style.width = mwPct + '%';
-    $('ballotMwPct').textContent = mwPct + '%';
-    $('ballotDrjPct').textContent = (total ? 100 - mwPct : 50) + '%';
-    $('ballotTotal').textContent = total + (total === 1 ? ' vote' : ' votes');
-    $('ballotHint').textContent = b.choice
-      ? 'You voted ' + b.choice + '. Tap the other side to switch.'
-      : 'Tap a side to vote. Tallies are stored in your browser.';
+  function tickCountdown() {
+    var now = Date.now();
+    var kick = kickoffMs(latestUpcoming);
+    var lock = lockMs(latestUpcoming);
+    var left = kick - now;
+    var wrap = $('countdown');
 
-    document.querySelectorAll('[data-ballot]').forEach(function (el) {
-      el.classList.toggle('is-voted', b.choice === el.getAttribute('data-ballot'));
-      el.setAttribute('aria-pressed', String(b.choice === el.getAttribute('data-ballot')));
+    if (left <= 0) {
+      $('cdD').textContent = '00'; $('cdH').textContent = '00';
+      $('cdM').textContent = '00'; $('cdS').textContent = '00';
+      wrap.setAttribute('data-state', 'locked');
+      $('cdLabel').textContent = latestUpcoming && latestUpcoming.state === 'post'
+        ? 'Final at Lambeau Field' : 'Kickoff has arrived';
+    } else {
+      var secs = Math.floor(left / 1000);
+      $('cdD').textContent = pad(Math.floor(secs / 86400));
+      $('cdH').textContent = pad(Math.floor(secs / 3600) % 24);
+      $('cdM').textContent = pad(Math.floor(secs / 60) % 60);
+      $('cdS').textContent = pad(secs % 60);
+      wrap.setAttribute('data-state', 'running');
+
+      var toLock = lock - now;
+      $('cdLabel').textContent = toLock > 0
+        ? 'until kickoff · ballot seals in ' + humanGap(toLock)
+        : 'until kickoff · the ballot is already sealed';
+    }
+
+    // lock chip
+    var chip = $('lockChip');
+    var lockLeft = lock - now;
+    if (lockLeft <= 0) {
+      chip.setAttribute('data-state', 'closed');
+      chip.textContent = 'Ballot sealed';
+    } else if (lockLeft < 6 * 3600000) {
+      chip.setAttribute('data-state', 'closing');
+      chip.textContent = 'Closes in ' + humanGap(lockLeft);
+    } else {
+      chip.setAttribute('data-state', 'open');
+      chip.textContent = 'Ballot open';
+    }
+  }
+
+  function humanGap(ms) {
+    var mins = Math.max(1, Math.round(ms / 60000));
+    if (mins < 60) return mins + 'm';
+    var hrs = Math.floor(mins / 60);
+    if (hrs < 24) return hrs + 'h ' + (mins % 60) + 'm';
+    return Math.floor(hrs / 24) + 'd ' + (hrs % 24) + 'h';
+  }
+
+  function isLocked() { return Date.now() >= lockMs(latestUpcoming); }
+
+  /* ============================================================== THE PICK */
+
+  function session() { return load(STORE.session, null); }
+  function currentPick() { return load(STORE.pick, null); }
+  function ledger() { return load(STORE.ledger, []); }
+
+  function logEntry(kind, from, to, who) {
+    var rows = ledger();
+    rows.push({ at: Date.now(), who: who, kind: kind, from: from || null, to: to || null });
+    save(STORE.ledger, rows);
+    renderLedger();
+  }
+
+  function teamOf(abbr) { return CONFIG.upcoming.teams[abbr] || { full: abbr, name: abbr, logo: '' }; }
+
+  function otherTeam(abbr) {
+    var keys = Object.keys(CONFIG.upcoming.teams);
+    return keys[0] === abbr ? keys[1] : keys[0];
+  }
+
+  var marked = null;   // team marked on the ballot but not yet sealed
+
+  function setStage(stage) { $('pickStage').setAttribute('data-stage', stage); }
+
+  function showPanels(which) {
+    ['authPanel', 'ballotPanel', 'tubePanel', 'revealPanel', 'closedPanel'].forEach(function (id) {
+      $(id).hidden = (id !== which);
     });
   }
 
-  function castBallot(choice) {
-    var b = load(STORE.ballot, { MW: 0, DrJ: 0, choice: null });
+  /** One place decides what the pick section looks like. */
+  function renderPick(stageOverride) {
+    var s = session();
+    var pick = currentPick();
+    var locked = isLocked();
+
+    if (stageOverride === 'transit') { setStage('transit'); showPanels('tubePanel'); return; }
+
+    // Locked with no pick on file: nothing to do but say so.
+    if (locked && !pick) {
+      setStage('closed');
+      showPanels('closedPanel');
+      $('closedHint').textContent = 'Voting closed two hours before kickoff and no pick was filed.';
+      return;
+    }
+
+    if (pick) {
+      setStage('result');
+      showPanels('revealPanel');
+      renderReveal(pick, locked);
+      return;
+    }
+
+    if (!s) {
+      setStage('auth');
+      showPanels('authPanel');
+      return;
+    }
+
+    setStage('ballot');
+    showPanels('ballotPanel');
+    $('whoName').textContent = s.who;
+
+    var isPicker = s.who === CONFIG.upcoming.picker;
+    var note = $('spectatorNote');
+    note.hidden = isPicker;
+    if (!isPicker) {
+      note.innerHTML = '<b>' + s.who + '</b>, this one is not yours. ' + CONFIG.upcoming.picker +
+        ' picks this week and you inherit whatever is left. You can watch, but the pen stays capped.';
+    }
+
+    Array.prototype.forEach.call(document.querySelectorAll('.choice'), function (btn) {
+      btn.disabled = !isPicker;
+      btn.classList.toggle('is-marked', marked === btn.getAttribute('data-team'));
+    });
+
+    var paper = $('paper');
+    paper.classList.remove('is-sealing');
+    paper.classList.toggle('is-signed', !!marked && isPicker);
+    $('paperSig').textContent = marked && isPicker ? s.who : '';
+
+    $('sealBtn').disabled = !isPicker || !marked;
+    $('ballotHint').textContent = !isPicker
+      ? 'Only ' + CONFIG.upcoming.picker + ' can file a ballot this week.'
+      : (marked ? 'Signed. Send it down the tube.' : 'Mark a team to sign the ballot.');
+  }
+
+  function renderReveal(pick, locked) {
+    var team = teamOf(pick.team);
+    var other = teamOf(otherTeam(pick.team));
+
+    $('revealLogo').src = team.logo;
+    $('revealLogo').alt = team.full + ' logo';
+    $('revealTeam').textContent = team.full;
+    $('revealBy').textContent = pick.by;
+    $('revealOther').textContent = CONFIG.upcoming.rival + ' gets the ' + other.full + '.';
+
+    var when = new Date(pick.at);
+    $('revealStamp').textContent = 'Filed ' + when.toLocaleString([], {
+      weekday: 'short', hour: 'numeric', minute: '2-digit'
+    }) + (pick.changes ? ' · changed ' + pick.changes + (pick.changes === 1 ? ' time' : ' times') : '');
+
+    var s = session();
+    var canChange = !locked && s && s.who === CONFIG.upcoming.picker;
+    $('changeBtn').hidden = !canChange;
+    $('changeBtn').textContent = 'Change the pick';
+
+    // Re-run the zoom so a fresh delivery lands with impact.
+    var card = $('revealCard');
+    card.style.animation = 'none';
+    void card.offsetWidth;
+    card.style.animation = '';
+
+    // Mirror the decision up in the hero strip.
+    $('nextUpText').innerHTML = CONFIG.upcoming.teams.ATL.name + ' at ' + CONFIG.upcoming.teams.GB.name +
+      ' &middot; <b>' + pick.by + '</b> picked the <b>' + team.name + '</b>';
+  }
+
+  /* ---- the delivery animation ---- */
+
+  var TRANSIT_MS = 3400;
+  var transitTimers = [];
+
+  function clearTransit() {
+    transitTimers.forEach(clearTimeout);
+    transitTimers = [];
+  }
+
+  function runDelivery(onDone) {
+    clearTransit();
+    var paper = $('paper');
+    paper.classList.add('is-sealing');
+    $('tubeStatus').textContent = 'Sealing the ballot…';
+
+    transitTimers.push(setTimeout(function () {
+      renderPick('transit');
+      $('tubeStatus').textContent = 'Ballot in the tube…';
+
+      var motion = $('podMotion');
+      if (motion && typeof motion.beginElement === 'function') {
+        try { motion.beginElement(); } catch (e) { /* SMIL unavailable; the timer still carries us */ }
+      }
+
+      transitTimers.push(setTimeout(function () {
+        $('tubeStatus').textContent = 'Delivered to the vault';
+        transitTimers.push(setTimeout(onDone, 500));
+      }, TRANSIT_MS));
+    }, 560));
+  }
+
+  function castPick(team) {
+    var s = session();
+    if (!s || s.who !== CONFIG.upcoming.picker) return;
+    if (isLocked()) { renderPick(); return; }
+
+    var prev = currentPick();
+    var record = {
+      team: team,
+      by: s.who,
+      at: Date.now(),
+      changes: prev ? (prev.changes || 0) + 1 : 0
+    };
+
+    save(STORE.pick, record);
+    logEntry(prev ? 'changed' : 'cast', prev ? prev.team : null, team, s.who);
+
+    runDelivery(function () {
+      marked = null;
+      renderPick();
+    });
+  }
+
+  /* ---- ledger ---- */
+
+  function renderLedger() {
+    var rows = ledger().slice().reverse();   // newest first
+    var list = $('ledgerList');
+    list.innerHTML = '';
+
+    $('ledgerCount').textContent = rows.length + (rows.length === 1 ? ' entry' : ' entries');
+
+    if (!rows.length) {
+      var empty = document.createElement('li');
+      empty.className = 'ledger__empty';
+      empty.textContent = 'No ballot filed yet for this game.';
+      list.appendChild(empty);
+      return;
+    }
+
+    rows.forEach(function (row) {
+      var li = document.createElement('li');
+      li.className = 'ledger__row';
+
+      var badge = document.createElement('span');
+      badge.className = 'ledger__badge';
+      badge.setAttribute('data-kind', row.kind);
+      badge.textContent = row.kind === 'changed' ? 'Changed' : 'Cast';
+
+      var what = document.createElement('span');
+      what.className = 'ledger__what';
+      var toName = teamOf(row.to).full;
+      what.innerHTML = row.kind === 'changed' && row.from
+        ? '<b>' + row.who + '</b> moved off the ' + teamOf(row.from).name + ' to the <b>' + toName + '</b>'
+        : '<b>' + row.who + '</b> picked the <b>' + toName + '</b>';
+
+      var when = document.createElement('span');
+      when.className = 'ledger__when';
+      when.textContent = new Date(row.at).toLocaleString([], {
+        month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit'
+      });
+
+      li.appendChild(badge);
+      li.appendChild(what);
+      li.appendChild(when);
+      list.appendChild(li);
+    });
+  }
+
+  function ledgerText() {
+    var rows = ledger();
+    if (!rows.length) return 'Football Master ledger — no entries yet.';
+    return ['Football Master — ballot ledger',
+            CONFIG.upcoming.label + ' · Falcons at Packers', ''].concat(
+      rows.map(function (r, i) {
+        return (i + 1) + '. ' + new Date(r.at).toLocaleString() + ' — ' + r.who + ' ' +
+          (r.kind === 'changed' ? 'changed to ' : 'picked ') + teamOf(r.to).full +
+          (r.from ? ' (was ' + teamOf(r.from).full + ')' : '');
+      })
+    ).join('\n');
+  }
+
+  function copyLedger() {
+    var text = ledgerText();
+    var btn = $('ledgerCopy');
+    var done = function () {
+      var old = btn.textContent;
+      btn.textContent = 'Copied';
+      setTimeout(function () { btn.textContent = old; }, 1600);
+    };
+
+    if (navigator.clipboard && navigator.clipboard.writeText) {
+      navigator.clipboard.writeText(text).then(done, fallback);
+    } else {
+      fallback();
+    }
+
+    function fallback() {
+      var ta = document.createElement('textarea');
+      ta.value = text;
+      ta.style.position = 'fixed';
+      ta.style.opacity = '0';
+      document.body.appendChild(ta);
+      ta.select();
+      try { document.execCommand('copy'); done(); } catch (e) { /* nothing else to try */ }
+      document.body.removeChild(ta);
+    }
+  }
+
+  /* ---- auth ---- */
+
+  function signIn(user, pass) {
+    var key = String(user || '').trim().toLowerCase();
+    var entry = CONFIG.users[key];
+    if (!entry || entry.pass !== pass) return null;
+    var s = { who: entry.who, at: Date.now() };
+    save(STORE.session, s);
+    return s;
+  }
+
+  function signOut() {
+    try { localStorage.removeItem(STORE.session); } catch (e) { /* ignore */ }
+    marked = null;
+    renderPick();
+  }
+
+  /* ============================================================= FAN POLL */
+
+  function fanKeys() { return Object.keys(CONFIG.upcoming.teams); }   // ['ATL','GB']
+
+  function renderFanPoll() {
+    var k = fanKeys();
+    var b = load(STORE.fan, null) || { choice: null };
+    var a = b[k[0]] || 0;
+    var h = b[k[1]] || 0;
+    var total = a + h;
+    var aPct = total ? Math.round((a / total) * 100) : 50;
+
+    $('ballotFill').style.width = aPct + '%';
+    $('ballotAwayPct').textContent = aPct + '%';
+    $('ballotHomePct').textContent = (total ? 100 - aPct : 50) + '%';
+    $('ballotTotal').textContent = total + (total === 1 ? ' vote' : ' votes');
+    $('fanHint').textContent = b.choice
+      ? 'You picked the ' + teamOf(b.choice).name + '. Tap the other side to switch.'
+      : 'Tap a side to vote. Tallies are stored in your browser.';
+
+    Array.prototype.forEach.call(document.querySelectorAll('[data-ballot]'), function (el) {
+      var mine = b.choice === el.getAttribute('data-ballot');
+      el.classList.toggle('is-voted', mine);
+      el.setAttribute('aria-pressed', String(mine));
+    });
+  }
+
+  function castFanVote(choice) {
+    var k = fanKeys();
+    var b = load(STORE.fan, null) || { choice: null };
+    k.forEach(function (key) { if (typeof b[key] !== 'number') b[key] = 0; });
     if (b.choice === choice) return;
     if (b.choice) b[b.choice] = Math.max(0, b[b.choice] - 1);
     b[choice] += 1;
     b.choice = choice;
-    save(STORE.ballot, b);
-    renderBallot();
+    save(STORE.fan, b);
+    renderFanPoll();
+  }
+
+  /* ========================================================== PEON'S ANTHEM */
+
+  var anthemEls = {};
+
+  function anthemCandidates() {
+    return CONFIG.anthem.formats.map(function (ext) {
+      return CONFIG.anthem.dir + CONFIG.anthem.basename + '.' + ext;
+    });
+  }
+
+  function fmtTime(sec) {
+    if (!isFinite(sec) || sec < 0) return '--:--';
+    var m = Math.floor(sec / 60);
+    var s = Math.floor(sec % 60);
+    return m + ':' + (s < 10 ? '0' : '') + s;
+  }
+
+  /**
+   * Find the recording without knowing its format: HEAD each candidate over
+   * http(s); off a file:// page HEAD is blocked, so let an <audio> element
+   * decide by trying to read each file's metadata.
+   */
+  function findAnthemFile() {
+    var urls = anthemCandidates();
+    var overHttp = /^https?:$/.test(location.protocol);
+
+    function viaHead(i) {
+      if (i >= urls.length) return Promise.resolve(null);
+      return fetch(urls[i], { method: 'HEAD', cache: 'no-store' })
+        .then(function (res) { return res.ok ? urls[i] : viaHead(i + 1); })
+        .catch(function () { return viaHead(i + 1); });
+    }
+
+    function viaAudio(i) {
+      if (i >= urls.length) return Promise.resolve(null);
+      return new Promise(function (resolve) {
+        var probe = new Audio();
+        probe.preload = 'metadata';
+        probe.onloadedmetadata = function () { resolve(urls[i]); };
+        probe.onerror = function () { resolve(null); };
+        probe.src = urls[i];
+      }).then(function (hit) { return hit || viaAudio(i + 1); });
+    }
+
+    return overHttp ? viaHead(0) : viaAudio(0);
+  }
+
+  function setAnthemState(state) { anthemEls.wrap.setAttribute('data-state', state); }
+
+  function armAnthem(url) {
+    var audio = anthemEls.audio;
+
+    anthemEls.play.disabled = false;
+    anthemEls.seek.disabled = false;
+    anthemEls.playLabel.textContent = 'Play the anthem';
+    anthemEls.note.textContent = 'Tribute delivered. Volume is the peon’s problem now.';
+    anthemEls.download.href = url;
+    anthemEls.download.hidden = false;
+    setAnthemState('ready');
+
+    anthemEls.play.addEventListener('click', function () {
+      if (audio.paused) {
+        audio.play().catch(function () {
+          anthemEls.note.textContent = 'Your browser blocked playback — tap play once more.';
+        });
+      } else {
+        audio.pause();
+      }
+    });
+
+    audio.addEventListener('play', function () {
+      setAnthemState('playing');
+      anthemEls.playLabel.textContent = 'Pause the anthem';
+    });
+
+    audio.addEventListener('pause', function () {
+      setAnthemState('ready');
+      anthemEls.playLabel.textContent = 'Resume the anthem';
+    });
+
+    audio.addEventListener('ended', function () {
+      setAnthemState('ready');
+      anthemEls.playLabel.textContent = 'Play it again';
+      anthemEls.seek.value = 0;
+      anthemEls.seek.style.setProperty('--progress', '0%');
+      anthemEls.now.textContent = '0:00';
+    });
+
+    ['loadedmetadata', 'durationchange'].forEach(function (evt) {
+      audio.addEventListener(evt, function () {
+        anthemEls.dur.textContent = fmtTime(audio.duration);
+      });
+    });
+
+    audio.addEventListener('timeupdate', function () {
+      if (!audio.duration) return;
+      var pct = (audio.currentTime / audio.duration) * 100;
+      anthemEls.seek.value = pct;
+      anthemEls.seek.style.setProperty('--progress', pct + '%');
+      anthemEls.now.textContent = fmtTime(audio.currentTime);
+    });
+
+    audio.addEventListener('error', function () {
+      setAnthemState('pending');
+      anthemEls.play.disabled = true;
+      anthemEls.seek.disabled = true;
+      anthemEls.playLabel.textContent = 'Recording unavailable';
+      anthemEls.note.textContent = 'The file is there but this browser cannot play it. Try the download link.';
+    });
+
+    anthemEls.seek.addEventListener('input', function () {
+      if (!audio.duration) return;
+      audio.currentTime = (anthemEls.seek.value / 100) * audio.duration;
+      anthemEls.seek.style.setProperty('--progress', anthemEls.seek.value + '%');
+    });
+
+    // Listeners first, then the source, so a fast (cached) load can't slip past them.
+    audio.src = url;
+  }
+
+  /** Name the singer and the crown once the game is final. */
+  function castAnthem(verdict, game) {
+    if (!anthemEls.wrap) return;
+    var known = verdict.master !== 'TBD' && verdict.peon !== 'TBD';
+
+    if (game.state === 'post' && known) {
+      anthemEls.kicker.textContent = 'This week’s tribute';
+      anthemEls.title.textContent = verdict.peon + ' sings for ' + verdict.master;
+      anthemEls.sub.textContent = verdict.peon + ' lost the throne and owes the Football Master a song. ' +
+        'Payment is non-negotiable.';
+    } else {
+      anthemEls.kicker.textContent = 'This week’s tribute';
+      anthemEls.title.textContent = 'The Peon’s Anthem';
+      anthemEls.sub.textContent = 'The loser sings the praises of the Football Master. Those are the rules.';
+    }
+  }
+
+  function initAnthem() {
+    anthemEls = {
+      wrap: $('anthem'), audio: $('anthemAudio'), play: $('anthemPlay'),
+      playLabel: $('anthemPlayLabel'), seek: $('anthemSeek'), now: $('anthemNow'),
+      dur: $('anthemDur'), note: $('anthemNote'), kicker: $('anthemKicker'),
+      title: $('anthemTitle'), sub: $('anthemSub'), download: $('anthemDownload')
+    };
+    if (!anthemEls.wrap) return;
+    findAnthemFile().then(function (url) { if (url) armAnthem(url); });
   }
 
   /* ========================================================== VOTING FLOOR */
 
   var HOUR = 3600000;
 
-  // Seed debate topics. Scores are demo starting values; real votes stack on top.
+  // Seeded debate topics. Scores are demo starting values; real votes stack on top.
   var SEED_TAKES = [
-    { id: 'm1', text: 'Home field at SoFi in prime time is worth more than the spread says. MW sleeps fine tonight.', side: 'MW', base: 41, agoH: 3, link: CONFIG.gameLinks.gamecast, linkLabel: 'Gamecast' },
-    { id: 'm2', text: 'The Giants front seven travels. Pressure up the middle is how DrJ takes this throne.', side: 'DrJ', base: 35, agoH: 4, link: CONFIG.gameLinks.boxscore, linkLabel: 'Box score' },
-    { id: 'm3', text: 'Rams receivers against that secondary is the matchup the whole game turns on.', side: 'MW', base: 26, agoH: 6, link: 'https://www.espn.com/nfl/team/_/name/lar/los-angeles-rams', linkLabel: 'Rams hub' },
-    { id: 'm4', text: 'New York is 1-0 and nobody is talking about it. That ends tonight on ABC.', side: 'DrJ', base: 21, agoH: 7, link: 'https://www.espn.com/nfl/team/_/name/nyg/new-york-giants', linkLabel: 'Giants hub' },
-    { id: 'm5', text: 'Third-down defense decides this one. Whoever gets off the field owns the fourth quarter.', side: null, base: 17, agoH: 9, link: CONFIG.gameLinks.pbp, linkLabel: 'Play-by-play' },
-    { id: 'm6', text: 'Whoever loses tonight is scrubbing helmets until the rematch. No appeals.', side: null, base: 12, agoH: 11, link: 'https://www.nfl.com/standings/', linkLabel: 'Standings' }
+    { id: 't1', text: 'Lambeau on a short week is where visiting teams go to disappear.', side: null, base: 38, agoH: 3, link: CONFIG.upcoming.gameLinks.gamecast, linkLabel: 'Gamecast' },
+    { id: 't2', text: 'Atlanta is 0-2 and desperate. Desperate teams cover on Thursday.', side: null, base: 31, agoH: 5, link: 'https://www.espn.com/nfl/team/_/name/atl/atlanta-falcons', linkLabel: 'Falcons hub' },
+    { id: 't3', text: 'Green Bay at home in prime time is the safest pick on the board. DrJ takes it and sleeps fine.', side: 'DrJ', base: 27, agoH: 7, link: 'https://www.espn.com/nfl/team/_/name/gb/green-bay-packers', linkLabel: 'Packers hub' },
+    { id: 't4', text: 'Whoever wins the turnover battle wins this game. It is not more complicated than that.', side: null, base: 19, agoH: 9, link: CONFIG.upcoming.gameLinks.pbp, linkLabel: 'Play-by-play' },
+    { id: 't5', text: 'MW got handed the leftovers this week and will somehow still be insufferable about it.', side: 'MW', base: 16, agoH: 11, link: CONFIG.upcoming.gameLinks.boxscore, linkLabel: 'Box score' },
+    { id: 't6', text: 'The real question is who is singing next Sunday. Start warming up now.', side: null, base: 13, agoH: 13, link: 'https://www.nfl.com/standings/', linkLabel: 'Standings' }
   ];
 
   var sortMode = 'hot';
@@ -389,16 +951,13 @@
     return seeded.concat(mine);
   }
 
-  function scoreOf(take, votes) {
-    return take.base + (votes[take.id] || 0);
-  }
+  function scoreOf(take, votes) { return take.base + (votes[take.id] || 0); }
 
   function sortTakes(takes, votes) {
     var now = Date.now();
     return takes.slice().sort(function (a, b) {
       if (sortMode === 'new') return b.createdAt - a.createdAt;
       if (sortMode === 'top') return scoreOf(b, votes) - scoreOf(a, votes);
-      // hot: score decayed by age
       var hot = function (t) {
         var hours = Math.max(0.5, (now - t.createdAt) / HOUR);
         return scoreOf(t, votes) / Math.pow(hours + 2, 0.55);
@@ -506,191 +1065,96 @@
     mine.push({ id: 'u' + Date.now(), text: text, createdAt: Date.now() });
     save(STORE.takes, mine);
     sortMode = 'new';
-    document.querySelectorAll('[data-sort]').forEach(function (b) {
+    Array.prototype.forEach.call(document.querySelectorAll('[data-sort]'), function (b) {
       b.classList.toggle('is-active', b.getAttribute('data-sort') === 'new');
     });
     renderFeed();
   }
 
-  /* ========================================================== PEON'S ANTHEM */
+  /* ================================================================== init */
 
-  var anthemEls = {};
-
-  function anthemCandidates() {
-    return CONFIG.anthem.formats.map(function (ext) {
-      return CONFIG.anthem.dir + CONFIG.anthem.basename + '.' + ext;
-    });
-  }
-
-  function fmtTime(sec) {
-    if (!isFinite(sec) || sec < 0) return '--:--';
-    var m = Math.floor(sec / 60);
-    var s = Math.floor(sec % 60);
-    return m + ':' + (s < 10 ? '0' : '') + s;
-  }
-
-  /**
-   * Find the recording without knowing its format: HEAD each candidate over
-   * http(s); off a file:// page HEAD is blocked, so let an <audio> element
-   * decide by trying to read each file's metadata.
-   */
-  function findAnthemFile() {
-    var urls = anthemCandidates();
-    var overHttp = /^https?:$/.test(location.protocol);
-
-    function viaHead(i) {
-      if (i >= urls.length) return Promise.resolve(null);
-      return fetch(urls[i], { method: 'HEAD', cache: 'no-store' })
-        .then(function (res) { return res.ok ? urls[i] : viaHead(i + 1); })
-        .catch(function () { return viaHead(i + 1); });
-    }
-
-    function viaAudio(i) {
-      if (i >= urls.length) return Promise.resolve(null);
-      return new Promise(function (resolve) {
-        var probe = new Audio();
-        probe.preload = 'metadata';
-        probe.onloadedmetadata = function () { resolve(urls[i]); };
-        probe.onerror = function () { resolve(null); };
-        probe.src = urls[i];
-      }).then(function (hit) { return hit || viaAudio(i + 1); });
-    }
-
-    return overHttp ? viaHead(0) : viaAudio(0);
-  }
-
-  function setAnthemState(state) {
-    anthemEls.wrap.setAttribute('data-state', state);
-  }
-
-  function armAnthem(url) {
-    var audio = anthemEls.audio;
-
-    anthemEls.play.disabled = false;
-    anthemEls.seek.disabled = false;
-    anthemEls.playLabel.textContent = 'Play the anthem';
-    anthemEls.note.textContent = 'Tribute delivered. Volume is the peon’s problem now.';
-    anthemEls.download.href = url;
-    anthemEls.download.hidden = false;
-    setAnthemState('ready');
-
-    anthemEls.play.addEventListener('click', function () {
-      if (audio.paused) {
-        audio.play().catch(function () {
-          anthemEls.note.textContent = 'Your browser blocked playback — tap play once more.';
-        });
-      } else {
-        audio.pause();
+  function wirePick() {
+    $('authForm').addEventListener('submit', function (e) {
+      e.preventDefault();
+      var err = $('authError');
+      var s = signIn($('authUser').value, $('authPass').value);
+      if (!s) {
+        err.hidden = false;
+        err.textContent = 'That login and password do not match anyone on the roster.';
+        return;
       }
+      err.hidden = true;
+      $('authPass').value = '';
+      renderPick();
     });
 
-    audio.addEventListener('play', function () {
-      setAnthemState('playing');
-      anthemEls.playLabel.textContent = 'Pause the anthem';
-    });
+    $('signOut').addEventListener('click', signOut);
 
-    audio.addEventListener('pause', function () {
-      setAnthemState('ready');
-      anthemEls.playLabel.textContent = 'Resume the anthem';
-    });
-
-    audio.addEventListener('ended', function () {
-      setAnthemState('ready');
-      anthemEls.playLabel.textContent = 'Play it again';
-      anthemEls.seek.value = 0;
-      anthemEls.seek.style.setProperty('--progress', '0%');
-      anthemEls.now.textContent = '0:00';
-    });
-
-    ['loadedmetadata', 'durationchange'].forEach(function (evt) {
-      audio.addEventListener(evt, function () {
-        anthemEls.dur.textContent = fmtTime(audio.duration);
+    Array.prototype.forEach.call(document.querySelectorAll('.choice'), function (btn) {
+      btn.addEventListener('click', function () {
+        if (btn.disabled) return;
+        marked = btn.getAttribute('data-team');
+        renderPick();
       });
     });
 
-    audio.addEventListener('timeupdate', function () {
-      if (!audio.duration) return;
-      var pct = (audio.currentTime / audio.duration) * 100;
-      anthemEls.seek.value = pct;
-      anthemEls.seek.style.setProperty('--progress', pct + '%');
-      anthemEls.now.textContent = fmtTime(audio.currentTime);
+    $('sealBtn').addEventListener('click', function () {
+      if (!marked) return;
+      castPick(marked);
     });
 
-    audio.addEventListener('error', function () {
-      setAnthemState('pending');
-      anthemEls.play.disabled = true;
-      anthemEls.seek.disabled = true;
-      anthemEls.playLabel.textContent = 'Recording unavailable';
-      anthemEls.note.textContent = 'The file is there but this browser cannot play it. Try the download link.';
+    $('changeBtn').addEventListener('click', function () {
+      if (isLocked()) { renderPick(); return; }
+      marked = null;
+      var pick = currentPick();
+      if (pick) marked = pick.team;
+      setStage('ballot');
+      showPanels('ballotPanel');
+      renderPickBallotOnly();
     });
 
-    anthemEls.seek.addEventListener('input', function () {
-      if (!audio.duration) return;
-      audio.currentTime = (anthemEls.seek.value / 100) * audio.duration;
-      anthemEls.seek.style.setProperty('--progress', anthemEls.seek.value + '%');
+    $('replayBtn').addEventListener('click', function () {
+      runDelivery(function () { renderPick(); });
     });
 
-    // Listeners first, then the source, so a fast (cached) load can't slip past them.
-    audio.src = url;
+    $('ledgerCopy').addEventListener('click', copyLedger);
   }
 
-  /** Name the singer and the crown once the game is final. */
-  function castAnthem(verdict, game) {
-    if (!anthemEls.wrap) return;
-    var known = verdict.master !== 'TBD' && verdict.peon !== 'TBD';
+  /** Change-the-pick reopens the ballot even though a pick already exists. */
+  function renderPickBallotOnly() {
+    var s = session();
+    if (!s) { renderPick(); return; }
+    $('whoName').textContent = s.who;
+    $('spectatorNote').hidden = true;
 
-    if (game.state === 'post' && known) {
-      anthemEls.kicker.textContent = 'Tonight’s tribute';
-      anthemEls.title.textContent = verdict.peon + ' sings for ' + verdict.master;
-      anthemEls.sub.textContent = verdict.peon + ' lost the throne and owes the Football Master a song. ' +
-        'Payment is non-negotiable.';
-    } else if (game.state === 'in' && known) {
-      anthemEls.kicker.textContent = 'Currently owed by';
-      anthemEls.title.textContent = verdict.peon + ' is warming up';
-      anthemEls.sub.textContent = 'If the scoreboard holds, ' + verdict.peon + ' sings the praises of ' +
-        verdict.master + ' when the clock hits zero.';
-    } else {
-      anthemEls.kicker.textContent = 'Tonight’s tribute';
-      anthemEls.title.textContent = 'The Peon’s Anthem';
-      anthemEls.sub.textContent = 'The loser sings the praises of the Football Master. Those are the rules.';
-    }
-  }
-
-  function initAnthem() {
-    anthemEls = {
-      wrap: $('anthem'),
-      audio: $('anthemAudio'),
-      play: $('anthemPlay'),
-      playLabel: $('anthemPlayLabel'),
-      seek: $('anthemSeek'),
-      now: $('anthemNow'),
-      dur: $('anthemDur'),
-      note: $('anthemNote'),
-      kicker: $('anthemKicker'),
-      title: $('anthemTitle'),
-      sub: $('anthemSub'),
-      download: $('anthemDownload')
-    };
-    if (!anthemEls.wrap) return;
-
-    findAnthemFile().then(function (url) {
-      if (url) armAnthem(url);
+    Array.prototype.forEach.call(document.querySelectorAll('.choice'), function (btn) {
+      btn.disabled = false;
+      btn.classList.toggle('is-marked', marked === btn.getAttribute('data-team'));
     });
-  }
 
-  /* ================================================================== init */
+    var paper = $('paper');
+    paper.classList.remove('is-sealing');
+    paper.classList.toggle('is-signed', !!marked);
+    $('paperSig').textContent = marked ? s.who : '';
+    $('sealBtn').disabled = !marked;
+    $('ballotHint').textContent = marked
+      ? 'Mark a different team, or send this one again.'
+      : 'Mark a team to sign the ballot.';
+  }
 
   function init() {
     $('refreshBtn').addEventListener('click', refresh);
 
-    document.querySelectorAll('[data-ballot]').forEach(function (el) {
-      el.addEventListener('click', function () { castBallot(el.getAttribute('data-ballot')); });
+    Array.prototype.forEach.call(document.querySelectorAll('[data-ballot]'), function (el) {
+      el.addEventListener('click', function () { castFanVote(el.getAttribute('data-ballot')); });
     });
 
-    document.querySelectorAll('[data-sort]').forEach(function (el) {
+    Array.prototype.forEach.call(document.querySelectorAll('[data-sort]'), function (el) {
       el.addEventListener('click', function () {
         sortMode = el.getAttribute('data-sort');
-        document.querySelectorAll('[data-sort]').forEach(function (b) { b.classList.remove('is-active'); });
+        Array.prototype.forEach.call(document.querySelectorAll('[data-sort]'), function (b) {
+          b.classList.remove('is-active');
+        });
         el.classList.add('is-active');
         renderFeed();
       });
@@ -705,11 +1169,17 @@
       input.value = '';
     });
 
+    wirePick();
+
     initAnthem();
-    renderBallot();
+    renderFanPoll();
     renderFeed();
+    renderLedger();
+    renderPick();
+    tickCountdown();
     refresh();
 
+    setInterval(tickCountdown, 1000);
     setInterval(refresh, CONFIG.pollMs);
     document.addEventListener('visibilitychange', function () {
       if (!document.hidden) refresh();

@@ -4,7 +4,7 @@
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
 <title>Football Master</title>
-<meta name="description" content="The Football Master board - live Giants vs. Rams score, the Master/Peon throne, and the community voting floor." />
+<meta name="description" content="The Football Master board - the reigning Master and Peon, the tribute song, and DrJ's official pick for Thursday Night Football." />
 <meta name="color-scheme" content="dark" />
 
 <!-- iOS "Add to Home Screen" support: makes this behave like an app icon instead of a Safari tab -->
@@ -16,7 +16,7 @@
 
 <link rel="preconnect" href="https://fonts.googleapis.com" />
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@600;700&amp;family=Inter:wght@400;500;600;700&amp;display=swap" />
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@600;700&amp;family=Caveat:wght@600;700&amp;family=Inter:wght@400;500;600;700&amp;display=swap" />
 <link rel="stylesheet" href="assets/css/styles.css" />
 
 <!-- Self-contained styling for the iOS "install" banner below — kept inline so it doesn't depend on styles.css -->
@@ -99,8 +99,9 @@
     <nav class="nav__links" aria-label="Primary">
       <a href="#anthem">Anthem</a>
       <a href="#throne">Throne</a>
-      <a href="#game">Live Game</a>
-      <a href="#ballot">Ballot</a>
+      <a href="#thursday">Thursday</a>
+      <a href="#pick">The Pick</a>
+      <a href="#ballot">Fan Poll</a>
       <a href="#floor">Voting Floor</a>
     </nav>
     <div class="nav__status">
@@ -115,12 +116,12 @@
   <section class="hero" id="throne">
     <div class="hero__glow" aria-hidden="true"></div>
     <div class="shell">
-      <p class="eyebrow">Monday Night Football &middot; SoFi Stadium &middot; 5:15 PM PT</p>
+      <p class="eyebrow">Week 3 settled &middot; Next up: Thursday Night Football</p>
       <h1 class="hero__title">The Football Master Board</h1>
       <p class="hero__sub">One game. One throne. The scoreboard decides who rules and who serves.</p>
 
       <!-- ============ PEON'S ANTHEM ============ -->
-      <!-- The loser of tonight's game owes the winner a song. This is where it plays. -->
+      <!-- The loser of the last game owes the winner a song. This is where it plays. -->
       <section class="anthem" id="anthem" data-state="pending" aria-labelledby="anthemTitle">
         <div class="anthem__disc" aria-hidden="true">
           <span class="anthem__disc-label">&#127944;</span>
@@ -197,47 +198,54 @@
         </article>
       </div>
 
+      <p class="crowned" id="crownedLine">&nbsp;</p>
+
+      <div class="nextup">
+        <span class="nextup__tag">Thursday</span>
+        <span class="nextup__text" id="nextUpText">Falcons at Packers &middot; 5:15 PM PT &middot; DrJ picks this week</span>
+        <a class="nextup__link" href="#pick">Go to the ballot &rarr;</a>
+      </div>
+
       <p class="rulebook">
-        <b>House rule:</b> Los Angeles leads &rarr; <b>MW</b> holds the Football Master spot. New York leads &rarr; <b>DrJ</b> holds it.
+        <b>House rule:</b> win your team's game, hold the crown. Lose it, and you sing.
         The other guy scrubs the helmets.
       </p>
     </div>
   </section>
-
-  <!-- ============ LIVE GAME ============ -->
-  <section class="section" id="game">
+  <!-- ============ THURSDAY MATCHUP ============ -->
+  <section class="section" id="thursday">
     <div class="shell">
       <header class="section__head">
-        <h2>Tonight&rsquo;s Game</h2>
+        <h2>Thursday Night Football</h2>
         <div class="section__tools">
           <span class="stamp" id="updatedStamp">&mdash;</span>
           <button class="btn btn--ghost" id="refreshBtn" type="button">Refresh</button>
         </div>
       </header>
 
-      <div class="board" id="board" data-state="loading">
+      <div class="board" id="board" data-state="pre">
         <div class="board__col board__col--team" id="awayCol">
-          <img class="board__logo" id="awayLogo" src="https://a.espncdn.com/i/teamlogos/nfl/500/scoreboard/nyg.png" alt="New York Giants logo" width="96" height="96" />
-          <p class="board__city" id="awayCity">New York</p>
-          <p class="board__team" id="awayTeam">Giants</p>
-          <p class="board__record" id="awayRecord">&nbsp;</p>
+          <img class="board__logo" id="awayLogo" src="https://a.espncdn.com/i/teamlogos/nfl/500/scoreboard/atl.png" alt="Atlanta Falcons logo" width="96" height="96" />
+          <p class="board__city" id="awayCity">Atlanta</p>
+          <p class="board__team" id="awayTeam">Falcons</p>
+          <p class="board__record" id="awayRecord">0-2</p>
           <p class="board__score" id="awayScore">&ndash;</p>
           <p class="board__tag" id="awayTag" hidden>Leading</p>
         </div>
 
         <div class="board__col board__col--mid">
-          <p class="board__state" id="gameState">Loading</p>
-          <p class="board__clock" id="gameClock">&nbsp;</p>
+          <p class="board__state" id="gameState">Scheduled</p>
+          <p class="board__clock" id="gameClock">5:15 PM PT</p>
           <div class="board__bar" aria-hidden="true"><span id="gameBarFill"></span></div>
-          <p class="board__venue" id="gameVenue">SoFi Stadium &middot; Inglewood, CA</p>
-          <p class="board__tv" id="gameTv">ESPN &amp; ABC</p>
+          <p class="board__venue" id="gameVenue">Lambeau Field &middot; Green Bay, WI</p>
+          <p class="board__tv" id="gameTv">Prime Video</p>
         </div>
 
         <div class="board__col board__col--team" id="homeCol">
-          <img class="board__logo" id="homeLogo" src="https://a.espncdn.com/i/teamlogos/nfl/500/scoreboard/lar.png" alt="Los Angeles Rams logo" width="96" height="96" />
-          <p class="board__city" id="homeCity">Los Angeles</p>
-          <p class="board__team" id="homeTeam">Rams</p>
-          <p class="board__record" id="homeRecord">&nbsp;</p>
+          <img class="board__logo" id="homeLogo" src="https://a.espncdn.com/i/teamlogos/nfl/500/scoreboard/gb.png" alt="Green Bay Packers logo" width="96" height="96" />
+          <p class="board__city" id="homeCity">Green Bay</p>
+          <p class="board__team" id="homeTeam">Packers</p>
+          <p class="board__record" id="homeRecord">1-1</p>
           <p class="board__score" id="homeScore">&ndash;</p>
           <p class="board__tag" id="homeTag" hidden>Leading</p>
         </div>
@@ -245,55 +253,228 @@
 
       <p class="board__note" id="boardNote" hidden></p>
 
+      <div class="countdown" id="countdown">
+        <div class="countdown__grid">
+          <div class="countdown__cell"><b id="cdD">--</b><span>days</span></div>
+          <div class="countdown__cell"><b id="cdH">--</b><span>hrs</span></div>
+          <div class="countdown__cell"><b id="cdM">--</b><span>min</span></div>
+          <div class="countdown__cell"><b id="cdS">--</b><span>sec</span></div>
+        </div>
+        <p class="countdown__label" id="cdLabel">until kickoff at Lambeau Field</p>
+      </div>
+
       <div class="linkrow">
-        <a class="linkcard" href="https://www.espn.com/nfl/game/_/gameId/401872947" target="_blank" rel="noopener">
+        <a class="linkcard" href="https://www.espn.com/nfl/game/_/gameId/401872948" target="_blank" rel="noopener">
           <span class="linkcard__k">ESPN Gamecast</span><span class="linkcard__v">Live score &amp; drive tracker</span>
         </a>
-        <a class="linkcard" href="https://www.espn.com/nfl/boxscore/_/gameId/401872947" target="_blank" rel="noopener">
+        <a class="linkcard" href="https://www.espn.com/nfl/boxscore/_/gameId/401872948" target="_blank" rel="noopener">
           <span class="linkcard__k">Box Score</span><span class="linkcard__v">Team &amp; player stat lines</span>
         </a>
-        <a class="linkcard" href="https://www.espn.com/nfl/playbyplay/_/gameId/401872947" target="_blank" rel="noopener">
+        <a class="linkcard" href="https://www.espn.com/nfl/playbyplay/_/gameId/401872948" target="_blank" rel="noopener">
           <span class="linkcard__k">Play-by-Play</span><span class="linkcard__v">Every drive, every snap</span>
+        </a>
+        <a class="linkcard" href="https://www.espn.com/nfl/team/_/name/atl/atlanta-falcons" target="_blank" rel="noopener">
+          <span class="linkcard__k">Falcons Hub</span><span class="linkcard__v">Roster, schedule, injuries</span>
+        </a>
+        <a class="linkcard" href="https://www.espn.com/nfl/team/_/name/gb/green-bay-packers" target="_blank" rel="noopener">
+          <span class="linkcard__k">Packers Hub</span><span class="linkcard__v">Roster, schedule, injuries</span>
         </a>
         <a class="linkcard" href="https://www.nfl.com/scores/" target="_blank" rel="noopener">
           <span class="linkcard__k">NFL.com Scores</span><span class="linkcard__v">League-wide scoreboard</span>
-        </a>
-        <a class="linkcard" href="https://www.therams.com/news/los-angeles-rams-vs-new-york-giants-how-to-watch-listen-to-and-live-stream-week-2-2026-monday-night-football" target="_blank" rel="noopener">
-          <span class="linkcard__k">How to Watch</span><span class="linkcard__v">ESPN, ABC &amp; stream details</span>
-        </a>
-        <a class="linkcard" href="https://www.espn.com/nfl/scoreboard" target="_blank" rel="noopener">
-          <span class="linkcard__k">Around the NFL</span><span class="linkcard__v">All of today&rsquo;s scores</span>
         </a>
       </div>
     </div>
   </section>
 
-  <!-- ============ MASTER BALLOT ============ -->
-  <section class="section section--alt" id="ballot">
+  <!-- ============ THE PICK ============ -->
+  <section class="section section--alt" id="pick">
     <div class="shell">
       <header class="section__head">
-        <h2>The Master Ballot</h2>
-        <p class="section__sub">The scoreboard rules tonight &mdash; but the people still get a say.</p>
+        <h2>The Pick</h2>
+        <div class="section__tools">
+          <span class="lockchip" id="lockChip" data-state="open">Ballot open</span>
+        </div>
+      </header>
+      <p class="section__sub pick__intro">
+        This week <b>DrJ</b> chooses. <b>MW</b> inherits whatever is left on the table.
+        The ballot seals two hours before kickoff.
+      </p>
+
+      <div class="pick" id="pickStage" data-stage="auth">
+
+        <!-- STEP 1 — identify yourself -->
+        <div class="pick__panel" id="authPanel">
+          <span class="pick__glyph" aria-hidden="true">&#128273;</span>
+          <h3 class="pick__h">Identify yourself</h3>
+          <p class="pick__hint">The ballot only opens for a verified voter.</p>
+
+          <form class="auth" id="authForm" autocomplete="off">
+            <div class="auth__row">
+              <label for="authUser">Login</label>
+              <input id="authUser" name="user" type="text" autocomplete="username" spellcheck="false" required />
+            </div>
+            <div class="auth__row">
+              <label for="authPass">Password</label>
+              <input id="authPass" name="pass" type="password" autocomplete="current-password" required />
+            </div>
+            <button class="btn btn--gold" type="submit">Verify &amp; open ballot</button>
+          </form>
+          <p class="auth__error" id="authError" role="alert" hidden></p>
+        </div>
+
+        <!-- STEP 2 — mark the ballot -->
+        <div class="pick__panel" id="ballotPanel" hidden>
+          <div class="who">
+            <span class="who__dot" aria-hidden="true"></span>
+            <span>Verified as <b id="whoName">DrJ</b></span>
+            <button class="who__out" id="signOut" type="button">Sign out</button>
+          </div>
+
+          <p class="pick__spectator" id="spectatorNote" hidden></p>
+
+          <div class="paper" id="paper">
+            <div class="paper__perf" aria-hidden="true"></div>
+            <p class="paper__head">Official Ballot</p>
+            <p class="paper__meta">Thursday Night Football &middot; Falcons at Packers &middot; Lambeau Field</p>
+            <p class="paper__q">Mark one team. The other goes to your rival.</p>
+
+            <div class="paper__choices" id="paperChoices">
+              <button class="choice" type="button" data-team="ATL">
+                <span class="choice__box" aria-hidden="true"><span class="choice__mark">&#10005;</span></span>
+                <img class="choice__logo" src="https://a.espncdn.com/i/teamlogos/nfl/500/scoreboard/atl.png" alt="" width="36" height="36" />
+                <span class="choice__name"><b>Atlanta Falcons</b><em>0-2 &middot; visiting</em></span>
+              </button>
+              <button class="choice" type="button" data-team="GB">
+                <span class="choice__box" aria-hidden="true"><span class="choice__mark">&#10005;</span></span>
+                <img class="choice__logo" src="https://a.espncdn.com/i/teamlogos/nfl/500/scoreboard/gb.png" alt="" width="36" height="36" />
+                <span class="choice__name"><b>Green Bay Packers</b><em>1-1 &middot; at home</em></span>
+              </button>
+            </div>
+
+            <div class="paper__sign">
+              <span class="paper__sig" id="paperSig"></span>
+              <span class="paper__sigline"></span>
+              <span class="paper__siglabel">Voter signature</span>
+            </div>
+          </div>
+
+          <button class="btn btn--gold pick__send" id="sealBtn" type="button" disabled>Seal the ballot &amp; send</button>
+          <p class="pick__hint" id="ballotHint">Mark a team to sign the ballot.</p>
+        </div>
+
+        <!-- STEP 3 — pneumatic tube transit -->
+        <div class="pick__panel pick__panel--tube" id="tubePanel" hidden>
+          <p class="tube__status" id="tubeStatus">Sealing the ballot&hellip;</p>
+
+          <div class="tube">
+            <svg class="tube__svg" viewBox="0 0 900 250" role="img" aria-label="The sealed ballot travelling through the delivery tubes">
+              <defs>
+                <linearGradient id="tubeGlass" x1="0" y1="0" x2="0" y2="1">
+                  <stop offset="0%" stop-color="#2b3b57" />
+                  <stop offset="45%" stop-color="#16203300" />
+                  <stop offset="100%" stop-color="#0a0f1a" />
+                </linearGradient>
+                <radialGradient id="podGlow">
+                  <stop offset="0%" stop-color="#f5c451" stop-opacity=".75" />
+                  <stop offset="100%" stop-color="#f5c451" stop-opacity="0" />
+                </radialGradient>
+                <path id="tubePath" d="M52,54 C230,54 210,196 392,196 C560,196 520,54 700,54 C800,54 828,120 848,196" />
+              </defs>
+
+              <!-- casing -->
+              <use href="#tubePath" xlink:href="#tubePath" class="tube__casing" />
+              <use href="#tubePath" xlink:href="#tubePath" class="tube__bore" />
+              <use href="#tubePath" xlink:href="#tubePath" class="tube__sheen" />
+              <use href="#tubePath" xlink:href="#tubePath" class="tube__dash" />
+
+              <!-- station collars -->
+              <g class="tube__collars">
+                <rect x="30" y="26" width="26" height="56" rx="7" />
+                <rect x="832" y="168" width="26" height="56" rx="7" />
+              </g>
+
+              <text class="tube__label" x="44" y="106">INTAKE</text>
+              <text class="tube__label tube__label--end" x="862" y="244">VAULT</text>
+
+              <!-- the football capsule -->
+              <g id="tubePod" class="tube__pod">
+                <circle class="tube__podglow" r="34" fill="url(#podGlow)" />
+                <ellipse class="tube__podshell" rx="19" ry="12" />
+                <path class="tube__podlace" d="M-7,0 H7 M-4,-4 V4 M0,-5 V5 M4,-4 V4" />
+                <animateMotion id="podMotion" dur="3.4s" begin="indefinite" fill="freeze"
+                               rotate="auto" calcMode="spline" keyTimes="0;1" keySplines="0.45 0 0.2 1">
+                  <mpath href="#tubePath" xlink:href="#tubePath" />
+                </animateMotion>
+              </g>
+            </svg>
+          </div>
+        </div>
+
+        <!-- STEP 4 — zoomed reveal -->
+        <div class="pick__panel pick__panel--reveal" id="revealPanel" hidden>
+          <div class="reveal" id="revealCard">
+            <p class="reveal__kicker">Official selection &middot; Thursday Night</p>
+            <img class="reveal__logo" id="revealLogo" src="" alt="" width="120" height="120" />
+            <h3 class="reveal__team" id="revealTeam">&nbsp;</h3>
+            <p class="reveal__by"><b id="revealBy">DrJ</b> is riding with them.</p>
+            <p class="reveal__other" id="revealOther">&nbsp;</p>
+            <p class="reveal__stamp" id="revealStamp">&nbsp;</p>
+            <div class="reveal__actions">
+              <button class="btn btn--ghost" id="changeBtn" type="button">Change the pick</button>
+              <button class="btn btn--ghost" id="replayBtn" type="button">Replay the delivery</button>
+            </div>
+          </div>
+        </div>
+
+        <!-- Ballot closed -->
+        <div class="pick__panel" id="closedPanel" hidden>
+          <span class="pick__glyph" aria-hidden="true">&#128274;</span>
+          <h3 class="pick__h">The ballot is sealed</h3>
+          <p class="pick__hint" id="closedHint">Voting closed two hours before kickoff.</p>
+        </div>
+      </div>
+
+      <!-- LEDGER -->
+      <div class="ledger">
+        <div class="ledger__head">
+          <h3 class="ledger__title">Ballot ledger</h3>
+          <span class="ledger__count" id="ledgerCount">0 entries</span>
+        </div>
+        <p class="ledger__sub">Every cast and every change for this game, kept in order.</p>
+        <ol class="ledger__list" id="ledgerList"></ol>
+        <div class="ledger__tools">
+          <button class="chip" id="ledgerCopy" type="button">Copy ledger</button>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============ FAN POLL ============ -->
+  <section class="section" id="ballot">
+    <div class="shell">
+      <header class="section__head">
+        <h2>Fan Poll</h2>
+        <p class="section__sub">Not binding, not official &mdash; just the crowd&rsquo;s read on Thursday.</p>
       </header>
 
       <div class="ballot">
-        <button class="ballot__side ballot__side--mw" type="button" data-ballot="MW">
-          <span class="ballot__who">MW</span>
-          <span class="ballot__team">Los Angeles Rams</span>
+        <button class="ballot__side ballot__side--away" type="button" data-ballot="ATL">
+          <span class="ballot__who">ATL</span>
+          <span class="ballot__team">Atlanta Falcons</span>
           <span class="ballot__cta">Cast vote</span>
         </button>
         <div class="ballot__meter">
           <div class="ballot__bar"><span id="ballotFill"></span></div>
           <div class="ballot__nums">
-            <span id="ballotMwPct">50%</span>
+            <span id="ballotAwayPct">50%</span>
             <span class="ballot__total" id="ballotTotal">0 votes</span>
-            <span id="ballotDrjPct">50%</span>
+            <span id="ballotHomePct">50%</span>
           </div>
-          <p class="ballot__hint" id="ballotHint">Tap a side to vote. One vote per browser.</p>
+          <p class="ballot__hint" id="fanHint">Tap a side to vote. Tallies are stored in your browser.</p>
         </div>
-        <button class="ballot__side ballot__side--drj" type="button" data-ballot="DrJ">
-          <span class="ballot__who">DrJ</span>
-          <span class="ballot__team">New York Giants</span>
+        <button class="ballot__side ballot__side--home" type="button" data-ballot="GB">
+          <span class="ballot__who">GB</span>
+          <span class="ballot__team">Green Bay Packers</span>
           <span class="ballot__cta">Cast vote</span>
         </button>
       </div>

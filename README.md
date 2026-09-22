@@ -2,14 +2,16 @@
 
 A single-page football site built around one question: **who holds the Football Master spot tonight?**
 
-Tonight's game is **New York Giants at Los Angeles Rams** — Monday Night Football, 5:15 PM PT (8:15 PM ET), SoFi Stadium, ESPN & ABC.
+The site tracks two games at once:
+
+- **The crown** — the settled game that decided who rules. Right now: Giants at Rams (Mon Sep 21 2026), won 28–6 by the Rams, so **MW** is Football Master and **DrJ** is the Peon who sang.
+- **The next game** — what gets picked and voted on. Right now: **Atlanta Falcons at Green Bay Packers**, Thursday Sep 24 2026, 5:15 PM PT, Lambeau Field, Prime Video.
 
 The house rule drives the whole UI:
 
 | Scoreboard | Football Master (left) | Football Peon (right) |
 | --- | --- | --- |
-| Los Angeles leading / wins | **MW** | DrJ |
-| New York leading / wins | **DrJ** | MW |
+| Your team wins | **you** | the other guy |
 | Tied or pregame | TBD | TBD |
 
 ## What's in it
@@ -18,7 +20,9 @@ The house rule drives the whole UI:
 - **Live scoreboard** — team logos, records, score, quarter and clock, refreshed every 30 seconds and whenever the tab regains focus.
 - **Real links** — ESPN Gamecast, box score, play-by-play, NFL.com scores, Rams broadcast/stream info, league scoreboard.
 - **The Peon's Anthem** — a gold plaque above the thrones where the loser's tribute song plays. It names the singer and the crown off the final score ("DrJ sings for MW"), and finds the recording whatever format it arrives in. See [assets/audio/README.md](assets/audio/README.md).
-- **Master Ballot** — head-to-head MW vs. DrJ vote with a live percentage bar.
+- **The Pick** — whoever's turn it is logs in, marks a paper ballot, signs it, and sends it through a pneumatic tube that delivers to the vault and zooms in on the selection. The rival automatically inherits the other team. Sealed two hours before kickoff.
+- **Ballot ledger** — every cast and every change, in order, with timestamps. Copyable.
+- **Fan Poll** — non-binding crowd vote on the same game.
 - **Voting Floor** — upvote/downvote feed of hot takes with Hot / Top / New sorting, plus a composer to post your own.
 
 ## Live data
@@ -62,6 +66,42 @@ The page installs like an app on iOS. In Safari, tap **Share → Add to Home Scr
 - Launched from the Home Screen it runs full-screen with no Safari chrome, so the layout honors `env(safe-area-inset-*)` — the nav clears the notch and the footer and banner clear the home indicator.
 
 Android/Chrome gets a normal bookmark; add a `manifest.webmanifest` if you want an installable PWA there too.
+
+## The Pick: how it works
+
+`CONFIG.upcoming.picker` names whose turn it is (currently `DrJ`); `CONFIG.upcoming.rival` gets the other
+team automatically. Logins live in `CONFIG.users` at the top of `assets/js/app.js`.
+
+**The login is a name tag, not a lock.** `app.js` is public, so anyone who opens developer tools can read
+the credentials or write a pick straight into storage. It stops the wrong person from wandering in; it does
+not stop anyone who is trying. Do not reuse a password here that protects anything real.
+
+**Persistence is per browser.** Picks, ledger entries, fan-poll tallies and takes are kept in `localStorage`,
+so they survive refreshes, restarts and Home Screen launches on *that device*. They do not travel: a pick DrJ
+files on his phone is not visible on MW's laptop. GitHub Pages serves static files and has nowhere to keep
+shared state.
+
+To make picks shared and tamper-resistant, the site needs a backend. The three usual routes:
+
+1. **A tiny serverless function** (Cloudflare Workers + KV, Netlify, Vercel) holding the pick behind a real
+   password check. Free tier, ~50 lines.
+2. **A hosted database with a client SDK** (Firebase, Supabase). Fastest to stand up; rules do the auth.
+3. **A form-backend service** (e.g. a private Gist via a token-scoped worker) if you only ever need append.
+
+Everything in the UI already goes through `load()` / `save()` helpers, so swapping the store for `fetch` calls
+is contained to those two functions plus the pick module.
+
+## Rolling to next week's game
+
+In `assets/js/app.js`:
+
+1. Move the finished game into `CONFIG.crown` (its `eventId`, `summaryUrl`, `label`, and the `people` map of
+   team abbreviation → person).
+2. Point `CONFIG.upcoming` at the next game: `eventId`, `summaryUrl`, `kickoffISO`, `kickoffLabel`, `network`,
+   `teams`, `gameLinks`, and swap `picker` / `rival` so the turn alternates.
+3. Update the team names, logos and links in `index.html`.
+
+Storage keys are namespaced by event id, so the new week starts with an empty ballot and ledger by itself.
 
 ## Structure
 
