@@ -17,7 +17,7 @@
 <link rel="preconnect" href="https://fonts.googleapis.com" />
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@600;700&amp;family=Caveat:wght@600;700&amp;family=Inter:wght@400;500;600;700&amp;display=swap" />
-<link rel="stylesheet" href="assets/css/styles.css" />
+<link rel="stylesheet" href="assets/css/styles.css?v=7" />
 
 <!-- Self-contained styling for the iOS "install" banner below — kept inline so it doesn't depend on styles.css -->
 <style>
@@ -312,11 +312,13 @@
           <form class="auth" id="authForm" autocomplete="off">
             <div class="auth__row">
               <label for="authUser">Login</label>
-              <input id="authUser" name="user" type="text" autocomplete="username" spellcheck="false" required />
+              <input id="authUser" name="user" type="text" autocomplete="username" spellcheck="false"
+                     autocapitalize="none" autocorrect="off" required />
             </div>
             <div class="auth__row">
               <label for="authPass">Password</label>
-              <input id="authPass" name="pass" type="password" autocomplete="current-password" required />
+              <input id="authPass" name="pass" type="password" autocomplete="current-password"
+                     autocapitalize="none" autocorrect="off" spellcheck="false" required />
             </div>
             <button class="btn btn--gold" type="submit">Verify &amp; open ballot</button>
           </form>
@@ -513,7 +515,7 @@
   </div>
 </footer>
 
-<script src="assets/js/app.js"></script>
+<script src="assets/js/app.js?v=7"></script>
 
 <!-- Shows the "Add to Home Screen" banner only for iPhone/iPad Safari visitors who haven't installed the app yet -->
 <script>
