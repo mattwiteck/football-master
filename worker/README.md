@@ -12,22 +12,22 @@ You need a Cloudflare account; the free plan covers this many times over. Run th
 cd worker
 
 # 1. Sign in — opens a browser window
-npx wrangler login
+npx wrangler@4 login
 
 # 2. Create the KV namespace; it prints an id
-npx wrangler kv namespace create FM
+npx wrangler@4 kv namespace create FM
 
 # 3. Paste that id into wrangler.toml, replacing REPLACE_WITH_KV_NAMESPACE_ID
 
 # 4. Set the signing secret — any long random string. To generate one:
 #      node -e "console.log(crypto.randomUUID()+crypto.randomUUID())"
-npx wrangler secret put TOKEN_SECRET
+npx wrangler@4 secret put TOKEN_SECRET
 
 # 5. Set the logins (see the shape below). This never touches the repo.
-npx wrangler secret put USERS
+npx wrangler@4 secret put USERS
 
 # 6. Ship it
-npx wrangler deploy
+npx wrangler@4 deploy
 ```
 
 Deploy prints a URL like `https://football-master-sync.<your-subdomain>.workers.dev`. Put it in `assets/js/app.js`:
@@ -50,7 +50,7 @@ When `wrangler secret put USERS` prompts, paste one line of JSON:
 
 ## Each week
 
-Edit the `GAMES` block in `wrangler.toml` and run `npx wrangler deploy`:
+Edit the `GAMES` block in `wrangler.toml` and run `npx wrangler@4 deploy`:
 
 ```toml
 GAMES = '''{

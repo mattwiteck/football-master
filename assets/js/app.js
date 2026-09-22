@@ -58,14 +58,13 @@
     // falls back to per-browser localStorage, which is how it shipped first.
     // Set it to your deployed worker URL to share state across devices:
     //   base: 'https://football-master-sync.<your-subdomain>.workers.dev'
-    api: { base: '' },
+    api: { base: 'https://football-master-sync.mwiteck.workers.dev' },
 
-    // Cosmetic gate, not security: this file is public, so treat it as a
-    // "who are you" prompt between two friends, nothing more.
-    users: {
-      jjw007: { pass: 'mattisgreat', who: 'DrJ' },
-      matt:   { pass: 'matt1234',    who: 'MW' }
-    },
+    // Logins live in the Worker's USERS secret now and are checked server
+    // side, so nothing sensitive sits in this file. These entries are only
+    // consulted when api.base above is empty (offline/local mode), which
+    // is why they are deliberately blank.
+    users: {},
 
     // The peon's tribute song. Drop the recording in assets/audio/ using any
     // of these extensions — the page finds whichever one is actually there.
