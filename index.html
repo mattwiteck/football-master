@@ -292,6 +292,7 @@
       <header class="section__head">
         <h2>The Pick</h2>
         <div class="section__tools">
+          <span class="syncchip" id="syncChip" data-state="local">This device only</span>
           <span class="lockchip" id="lockChip" data-state="open">Ballot open</span>
         </div>
       </header>
@@ -500,7 +501,7 @@
       </form>
 
       <ul class="feed" id="feed"></ul>
-      <p class="feed__note">Takes and votes are saved in your browser. Swap the store for an API later and the UI stays the same.</p>
+      <p class="feed__note" id="feedNote">Takes and votes are saved in this browser only.</p>
     </div>
   </section>
 </main>

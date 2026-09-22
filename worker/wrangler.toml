@@ -1,0 +1,25 @@
+name = "football-master-sync"
+main = "src/worker.js"
+compatibility_date = "2026-09-01"
+
+# Lock the browser origin allowed to call this API. "*" works but lets any
+# site call it; set it to your Pages URL once you have confirmed it works.
+[vars]
+ALLOW_ORIGIN = "https://mattwiteck.github.io"
+
+# Whose turn it is, and when the ballot seals, per ESPN event id.
+# Update this each week and redeploy — the client cannot override it.
+GAMES = '''{
+  "401872948": {
+    "picker": "DrJ",
+    "rival": "MW",
+    "teams": ["ATL", "GB"],
+    "lockAt": "2026-09-24T22:15:00Z"
+  }
+}'''
+
+# Created by: npx wrangler kv namespace create FM
+# Paste the printed id below.
+[[kv_namespaces]]
+binding = "FM"
+id = "REPLACE_WITH_KV_NAMESPACE_ID"

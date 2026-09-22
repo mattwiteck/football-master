@@ -3,3 +3,7 @@ Thumbs.db
 *.log
 .vscode/
 .idea/
+
+# worker tooling
+worker/node_modules/
+worker/.wrangler/

@@ -54,6 +54,12 @@
     scoreboardUrl: 'https://site.api.espn.com/apis/site/v2/sports/football/nfl/scoreboard',
     pollMs: 30000,
 
+    // Sync service (Cloudflare Worker). Leave base empty and the whole site
+    // falls back to per-browser localStorage, which is how it shipped first.
+    // Set it to your deployed worker URL to share state across devices:
+    //   base: 'https://football-master-sync.<your-subdomain>.workers.dev'
+    api: { base: '' },
+
     // Cosmetic gate, not security: this file is public, so treat it as a
     // "who are you" prompt between two friends, nothing more.
     users: {
@@ -400,7 +406,15 @@
         renderError(err, !!cached);
       });
 
-    return Promise.all([crownJob, upcomingJob]).then(function () { btn.disabled = false; });
+    var syncJob = DB.sync().then(function () {
+      // Someone else may have picked, posted or voted since the last tick.
+      renderLedger();
+      renderFeed();
+      renderFanPoll();
+      renderPick();
+    });
+
+    return Promise.all([crownJob, upcomingJob, syncJob]).then(function () { btn.disabled = false; });
   }
 
   /* ================================================================ CLOCK */
@@ -459,18 +473,254 @@
 
   function isLocked() { return Date.now() >= lockMs(latestUpcoming); }
 
+  /* ================================================================== DB
+
+     One store with two backends.
+
+     Offline (CONFIG.api.base empty) everything lives in localStorage, exactly
+     as it did before the Worker existed: it survives refreshes but never
+     leaves the device.
+
+     Online it all lives in Cloudflare KV behind the sync Worker, so DrJ's
+     pick, the ledger, the takes and the votes are the same on every device.
+     Writes carry a signed token; reads are public.
+
+     Both backends are normalised to one shape so nothing downstream cares:
+       { pick, ledger, takes, votes, fan }
+     ====================================================================== */
+
+  var DB = {
+    online: !!(CONFIG.api && CONFIG.api.base),
+    reachable: null,          // null = not tried yet
+    state: { pick: null, ledger: [], takes: [], votes: {}, fan: {} },
+    rules: null,              // server-declared picker/lockAt, when online
+    session: null
+  };
+
+  function apiUrl(path) {
+    return String(CONFIG.api.base).replace(/\/+$/, '') + path;
+  }
+
+  function apiCall(path, opts) {
+    opts = opts || {};
+    var headers = { 'Content-Type': 'application/json' };
+    if (DB.session && DB.session.token) headers.Authorization = 'Bearer ' + DB.session.token;
+
+    return fetch(apiUrl(path), {
+      method: opts.method || 'GET',
+      headers: headers,
+      cache: 'no-store',
+      body: opts.body ? JSON.stringify(opts.body) : undefined
+    }).then(function (res) {
+      return res.json().catch(function () { return {}; }).then(function (data) {
+        if (!res.ok) {
+          var err = new Error(data.error || ('http_' + res.status));
+          err.status = res.status;
+          err.data = data;
+          throw err;
+        }
+        return data;
+      });
+    });
+  }
+
+  /** Local storage shaped like the server payload. */
+  function localState() {
+    var fan = load(STORE.fan, null) || {};
+    var counts = {};
+    fanKeys().forEach(function (k) { if (fan[k]) counts[k] = fan[k]; });
+
+    return {
+      pick: load(STORE.pick, null),
+      ledger: load(STORE.ledger, []),
+      takes: load(STORE.takes, []),
+      votes: load(STORE.votes, {}),
+      fan: { counts: counts, mine: fan.choice || null }
+    };
+  }
+
+  DB.loadSession = function () {
+    DB.session = load(STORE.session, null);
+    // A token from a previous deploy of the Worker is no use offline, and a
+    // bare offline session is no use online.
+    if (DB.online && DB.session && !DB.session.token) DB.session = null;
+    return DB.session;
+  };
+
+  DB.sync = function () {
+    if (!DB.online) {
+      DB.state = localState();
+      DB.reachable = true;
+      return Promise.resolve(DB.state);
+    }
+    return apiCall('/state?game=' + encodeURIComponent(EVT))
+      .then(function (data) {
+        var s = data.state || {};
+        DB.state = {
+          pick: s.pick || null,
+          ledger: s.ledger || [],
+          takes: s.takes || [],
+          votes: s.votes || {},
+          fan: { counts: (s.fan && s.fan.counts) || {}, byUser: (s.fan && s.fan.byUser) || {} }
+        };
+        DB.rules = data.rules || null;
+        DB.reachable = true;
+        return DB.state;
+      })
+      .catch(function () {
+        DB.reachable = false;
+        return DB.state;
+      });
+  };
+
+  DB.login = function (user, pass) {
+    if (!DB.online) {
+      var key = String(user || '').trim().toLowerCase();
+      var entry = CONFIG.users[key];
+      if (!entry || entry.pass !== pass) return Promise.resolve(null);
+      DB.session = { who: entry.who, at: Date.now() };
+      save(STORE.session, DB.session);
+      return Promise.resolve(DB.session);
+    }
+    return apiCall('/login', { method: 'POST', body: { user: user, pass: pass } })
+      .then(function (data) {
+        DB.session = { who: data.who, token: data.token, at: Date.now() };
+        save(STORE.session, DB.session);
+        return DB.session;
+      })
+      .catch(function () { return null; });
+  };
+
+  DB.logout = function () {
+    DB.session = null;
+    try { localStorage.removeItem(STORE.session); } catch (e) { /* ignore */ }
+  };
+
+  DB.castPick = function (team) {
+    if (!DB.session) return Promise.reject(new Error('unauthorized'));
+
+    if (!DB.online) {
+      var prev = DB.state.pick;
+      var record = {
+        team: team, by: DB.session.who, at: Date.now(),
+        changes: prev ? (prev.changes || 0) + 1 : 0
+      };
+      var rows = DB.state.ledger.slice();
+      rows.push({
+        at: Date.now(), who: DB.session.who,
+        kind: prev ? 'changed' : 'cast',
+        from: prev ? prev.team : null, to: team
+      });
+      save(STORE.pick, record);
+      save(STORE.ledger, rows);
+      DB.state.pick = record;
+      DB.state.ledger = rows;
+      return Promise.resolve(DB.state);
+    }
+
+    return apiCall('/pick', { method: 'POST', body: { game: EVT, team: team } })
+      .then(function () { return DB.sync(); });
+  };
+
+  DB.addTake = function (text) {
+    if (!DB.online) {
+      var mine = DB.state.takes.slice();
+      mine.push({ id: 'u' + Date.now(), text: text, createdAt: Date.now() });
+      save(STORE.takes, mine);
+      DB.state.takes = mine;
+      return Promise.resolve(DB.state);
+    }
+    if (!DB.session) return Promise.reject(new Error('unauthorized'));
+    return apiCall('/take', { method: 'POST', body: { game: EVT, text: text } })
+      .then(function () { return DB.sync(); });
+  };
+
+  DB.voteTake = function (id, dir) {
+    if (!DB.online) {
+      var votes = load(STORE.votes, {});
+      votes[id] = votes[id] === dir ? 0 : dir;
+      save(STORE.votes, votes);
+      DB.state.votes = votes;
+      return Promise.resolve(DB.state);
+    }
+    if (!DB.session) return Promise.reject(new Error('unauthorized'));
+    var next = DB.myVote(id) === dir ? 0 : dir;
+    return apiCall('/vote', { method: 'POST', body: { game: EVT, id: id, dir: next } })
+      .then(function () { return DB.sync(); });
+  };
+
+  DB.castFan = function (team) {
+    if (!DB.online) {
+      var fan = load(STORE.fan, null) || { choice: null };
+      fanKeys().forEach(function (k) { if (typeof fan[k] !== 'number') fan[k] = 0; });
+      if (fan.choice === team) return Promise.resolve(DB.state);
+      if (fan.choice) fan[fan.choice] = Math.max(0, fan[fan.choice] - 1);
+      fan[team] += 1;
+      fan.choice = team;
+      save(STORE.fan, fan);
+      DB.state = localState();
+      return Promise.resolve(DB.state);
+    }
+    if (!DB.session) return Promise.reject(new Error('unauthorized'));
+    return apiCall('/fan', { method: 'POST', body: { game: EVT, team: team } })
+      .then(function () { return DB.sync(); });
+  };
+
+  /* ---- shape helpers, so renderers never branch on the backend ---- */
+
+  /** Net score contributed by stored votes for one take. */
+  DB.voteSum = function (id) {
+    var v = DB.state.votes[id];
+    if (v == null) return 0;
+    if (typeof v === 'number') return v;                 // offline: one voter
+    return Object.keys(v).reduce(function (n, who) { return n + (v[who] || 0); }, 0);
+  };
+
+  /** This viewer's own direction on a take: 1, -1 or 0. */
+  DB.myVote = function (id) {
+    var v = DB.state.votes[id];
+    if (v == null) return 0;
+    if (typeof v === 'number') return v;
+    if (!DB.session) return 0;
+    return v[DB.session.who] || 0;
+  };
+
+  DB.fanCount = function (team) {
+    return (DB.state.fan.counts && DB.state.fan.counts[team]) || 0;
+  };
+
+  DB.myFan = function () {
+    if (!DB.online) return DB.state.fan.mine || null;
+    if (!DB.session) return null;
+    return (DB.state.fan.byUser && DB.state.fan.byUser[DB.session.who]) || null;
+  };
+
+  /** Writes need an identity only when there is a server to talk to. */
+  DB.needsLoginToPost = function () { return DB.online && !DB.session; };
+
+  function syncChipText() {
+    var chip = $('syncChip');
+    if (!chip) return;
+    if (!DB.online) {
+      chip.setAttribute('data-state', 'local');
+      chip.textContent = 'This device only';
+      chip.title = 'No sync server configured — picks and takes stay in this browser.';
+    } else if (DB.reachable === false) {
+      chip.setAttribute('data-state', 'down');
+      chip.textContent = 'Sync offline';
+      chip.title = 'The sync service did not answer. Showing the last data this browser received.';
+    } else {
+      chip.setAttribute('data-state', 'synced');
+      chip.textContent = 'Synced';
+      chip.title = 'Picks, takes and votes are shared across devices.';
+    }
+  }
+
   /* ============================================================== THE PICK */
 
-  function session() { return load(STORE.session, null); }
-  function currentPick() { return load(STORE.pick, null); }
-  function ledger() { return load(STORE.ledger, []); }
-
-  function logEntry(kind, from, to, who) {
-    var rows = ledger();
-    rows.push({ at: Date.now(), who: who, kind: kind, from: from || null, to: to || null });
-    save(STORE.ledger, rows);
-    renderLedger();
-  }
+  function session() { return DB.session; }
+  function currentPick() { return DB.state.pick; }
+  function ledger() { return DB.state.ledger || []; }
 
   function teamOf(abbr) { return CONFIG.upcoming.teams[abbr] || { full: abbr, name: abbr, logo: '' }; }
 
@@ -614,20 +864,23 @@
     if (!s || s.who !== CONFIG.upcoming.picker) return;
     if (isLocked()) { renderPick(); return; }
 
-    var prev = currentPick();
-    var record = {
-      team: team,
-      by: s.who,
-      at: Date.now(),
-      changes: prev ? (prev.changes || 0) + 1 : 0
-    };
-
-    save(STORE.pick, record);
-    logEntry(prev ? 'changed' : 'cast', prev ? prev.team : null, team, s.who);
+    // Start the delivery immediately; the write rides along with it.
+    var written = DB.castPick(team).then(function () { return true; }, function (err) { return err; });
 
     runDelivery(function () {
-      marked = null;
-      renderPick();
+      written.then(function (result) {
+        marked = null;
+        renderLedger();
+        renderPick();
+        if (result !== true) {
+          var why = (result && result.message) || 'write_failed';
+          var note = why === 'ballot_sealed' ? 'The server sealed the ballot before that landed.'
+            : why === 'not_your_turn' ? 'The server says it is not your turn this week.'
+            : why === 'unauthorized' ? 'Sign in again to file this pick.'
+            : 'The pick could not be saved to the sync service, so it is not shared yet.';
+          $('revealStamp').textContent = note;
+        }
+      });
     });
   }
 
@@ -635,6 +888,7 @@
 
   function renderLedger() {
     var rows = ledger().slice().reverse();   // newest first
+    syncChipText();
     var list = $('ledgerList');
     list.innerHTML = '';
 
@@ -719,18 +973,11 @@
 
   /* ---- auth ---- */
 
-  function signIn(user, pass) {
-    var key = String(user || '').trim().toLowerCase();
-    var entry = CONFIG.users[key];
-    if (!entry || entry.pass !== pass) return null;
-    var s = { who: entry.who, at: Date.now() };
-    save(STORE.session, s);
-    return s;
-  }
-
   function signOut() {
-    try { localStorage.removeItem(STORE.session); } catch (e) { /* ignore */ }
+    DB.logout();
     marked = null;
+    renderFeed();
+    renderFanPoll();
     renderPick();
   }
 
@@ -740,9 +987,9 @@
 
   function renderFanPoll() {
     var k = fanKeys();
-    var b = load(STORE.fan, null) || { choice: null };
-    var a = b[k[0]] || 0;
-    var h = b[k[1]] || 0;
+    var mine = DB.myFan();
+    var a = DB.fanCount(k[0]);
+    var h = DB.fanCount(k[1]);
     var total = a + h;
     var aPct = total ? Math.round((a / total) * 100) : 50;
 
@@ -750,27 +997,33 @@
     $('ballotAwayPct').textContent = aPct + '%';
     $('ballotHomePct').textContent = (total ? 100 - aPct : 50) + '%';
     $('ballotTotal').textContent = total + (total === 1 ? ' vote' : ' votes');
-    $('fanHint').textContent = b.choice
-      ? 'You picked the ' + teamOf(b.choice).name + '. Tap the other side to switch.'
-      : 'Tap a side to vote. Tallies are stored in your browser.';
+    $('fanHint').textContent = DB.needsLoginToPost()
+      ? 'Sign in under The Pick to vote \u2014 tallies are shared between you two.'
+      : (mine ? 'You picked the ' + teamOf(mine).name + '. Tap the other side to switch.'
+              : (DB.online ? 'Tap a side to vote. Tallies are shared across devices.'
+                           : 'Tap a side to vote. Tallies are stored in your browser.'));
 
     Array.prototype.forEach.call(document.querySelectorAll('[data-ballot]'), function (el) {
-      var mine = b.choice === el.getAttribute('data-ballot');
-      el.classList.toggle('is-voted', mine);
-      el.setAttribute('aria-pressed', String(mine));
+      var isMine = mine === el.getAttribute('data-ballot');
+      el.classList.toggle('is-voted', isMine);
+      el.setAttribute('aria-pressed', String(isMine));
     });
   }
 
   function castFanVote(choice) {
-    var k = fanKeys();
-    var b = load(STORE.fan, null) || { choice: null };
-    k.forEach(function (key) { if (typeof b[key] !== 'number') b[key] = 0; });
-    if (b.choice === choice) return;
-    if (b.choice) b[b.choice] = Math.max(0, b[b.choice] - 1);
-    b[choice] += 1;
-    b.choice = choice;
-    save(STORE.fan, b);
-    renderFanPoll();
+    if (DB.needsLoginToPost()) { nudgeLogin(); return; }
+    DB.castFan(choice).then(renderFanPoll, function () { renderFanPoll(); });
+  }
+
+  /** Point someone at the login when a write needs an identity. */
+  function nudgeLogin() {
+    var target = $('pick');
+    if (target) target.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    var err = $('authError');
+    if (err && !$('authPanel').hidden) {
+      err.hidden = false;
+      err.textContent = 'Sign in first \u2014 posts and votes are shared, so they need a name on them.';
+    }
   }
 
   /* ========================================================== PEON'S ANTHEM */
@@ -945,22 +1198,26 @@
         createdAt: now - t.agoH * HOUR, link: t.link, linkLabel: t.linkLabel
       };
     });
-    var mine = load(STORE.takes, []).map(function (t) {
-      return { id: t.id, text: t.text, side: 'You', base: 1, createdAt: t.createdAt, link: null, linkLabel: null };
+    var posted = (DB.state.takes || []).map(function (t) {
+      return {
+        id: t.id, text: t.text,
+        side: t.by || 'You',            // shared takes carry their author
+        base: 1, createdAt: t.createdAt, link: null, linkLabel: null
+      };
     });
-    return seeded.concat(mine);
+    return seeded.concat(posted);
   }
 
-  function scoreOf(take, votes) { return take.base + (votes[take.id] || 0); }
+  function scoreOf(take) { return take.base + DB.voteSum(take.id); }
 
-  function sortTakes(takes, votes) {
+  function sortTakes(takes) {
     var now = Date.now();
     return takes.slice().sort(function (a, b) {
       if (sortMode === 'new') return b.createdAt - a.createdAt;
-      if (sortMode === 'top') return scoreOf(b, votes) - scoreOf(a, votes);
+      if (sortMode === 'top') return scoreOf(b) - scoreOf(a);
       var hot = function (t) {
         var hours = Math.max(0.5, (now - t.createdAt) / HOUR);
-        return scoreOf(t, votes) / Math.pow(hours + 2, 0.55);
+        return scoreOf(t) / Math.pow(hours + 2, 0.55);
       };
       return hot(b) - hot(a);
     });
@@ -975,10 +1232,24 @@
   }
 
   function renderFeed() {
-    var votes = load(STORE.votes, {});
-    var list = sortTakes(allTakes(), votes);
+    var list = sortTakes(allTakes());
     var feed = $('feed');
     feed.innerHTML = '';
+
+    var composer = $('takeInput');
+    var locked = DB.needsLoginToPost();
+    composer.placeholder = locked
+      ? 'Sign in under The Pick to post a take\u2026'
+      : 'Drop your hot take on Thursday\u2019s game\u2026';
+
+    var note = $('feedNote');
+    if (note) {
+      note.textContent = !DB.online
+        ? 'Takes and votes are saved in this browser only.'
+        : (DB.reachable === false
+            ? 'The sync service is not answering, so this is the last shared copy this browser saw.'
+            : 'Takes and votes are shared \u2014 you both see the same board.');
+    }
 
     list.forEach(function (take, index) {
       var li = document.createElement('li');
@@ -993,11 +1264,11 @@
       up.innerHTML = '&#9650;';
       up.title = 'Upvote';
       up.setAttribute('aria-label', 'Upvote: ' + take.text);
-      up.setAttribute('aria-pressed', String(votes[take.id] === 1));
+      up.setAttribute('aria-pressed', String(DB.myVote(take.id) === 1));
 
       var scoreEl = document.createElement('span');
       scoreEl.className = 'take__score';
-      scoreEl.textContent = scoreOf(take, votes);
+      scoreEl.textContent = scoreOf(take);
 
       var down = document.createElement('button');
       down.type = 'button';
@@ -1005,7 +1276,7 @@
       down.innerHTML = '&#9660;';
       down.title = 'Downvote';
       down.setAttribute('aria-label', 'Downvote: ' + take.text);
-      down.setAttribute('aria-pressed', String(votes[take.id] === -1));
+      down.setAttribute('aria-pressed', String(DB.myVote(take.id) === -1));
 
       up.addEventListener('click', function () { vote(take.id, 1); });
       down.addEventListener('click', function () { vote(take.id, -1); });
@@ -1028,7 +1299,8 @@
         var badge = document.createElement('span');
         badge.className = 'take__badge';
         badge.setAttribute('data-side', take.side);
-        badge.textContent = take.side === 'You' ? 'Your take' : 'Team ' + take.side;
+        badge.textContent = take.side === 'You' ? 'Your take'
+          : (take.side === 'MW' || take.side === 'DrJ') ? take.side : 'Team ' + take.side;
         meta.appendChild(badge);
       }
 
@@ -1054,21 +1326,19 @@
   }
 
   function vote(id, direction) {
-    var votes = load(STORE.votes, {});
-    votes[id] = votes[id] === direction ? 0 : direction;
-    save(STORE.votes, votes);
-    renderFeed();
+    if (DB.needsLoginToPost()) { nudgeLogin(); return; }
+    DB.voteTake(id, direction).then(renderFeed, function () { renderFeed(); });
   }
 
   function addTake(text) {
-    var mine = load(STORE.takes, []);
-    mine.push({ id: 'u' + Date.now(), text: text, createdAt: Date.now() });
-    save(STORE.takes, mine);
-    sortMode = 'new';
-    Array.prototype.forEach.call(document.querySelectorAll('[data-sort]'), function (b) {
-      b.classList.toggle('is-active', b.getAttribute('data-sort') === 'new');
-    });
-    renderFeed();
+    if (DB.needsLoginToPost()) { nudgeLogin(); return; }
+    DB.addTake(text).then(function () {
+      sortMode = 'new';
+      Array.prototype.forEach.call(document.querySelectorAll('[data-sort]'), function (b) {
+        b.classList.toggle('is-active', b.getAttribute('data-sort') === 'new');
+      });
+      renderFeed();
+    }, function () { renderFeed(); });
   }
 
   /* ================================================================== init */
@@ -1077,15 +1347,28 @@
     $('authForm').addEventListener('submit', function (e) {
       e.preventDefault();
       var err = $('authError');
-      var s = signIn($('authUser').value, $('authPass').value);
-      if (!s) {
-        err.hidden = false;
-        err.textContent = 'That login and password do not match anyone on the roster.';
-        return;
-      }
-      err.hidden = true;
-      $('authPass').value = '';
-      renderPick();
+      var btn = $('authForm').querySelector('button[type="submit"]');
+      btn.disabled = true;
+
+      DB.login($('authUser').value, $('authPass').value).then(function (s) {
+        btn.disabled = false;
+        if (!s) {
+          err.hidden = false;
+          err.textContent = DB.online && DB.reachable === false
+            ? 'The sync service did not answer, so the login could not be checked.'
+            : 'That login and password do not match anyone on the roster.';
+          return;
+        }
+        err.hidden = true;
+        $('authPass').value = '';
+        // Signing in changes what this viewer owns, so redraw everything.
+        DB.sync().then(function () {
+          renderLedger();
+          renderFeed();
+          renderFanPoll();
+          renderPick();
+        });
+      });
     });
 
     $('signOut').addEventListener('click', signOut);
@@ -1172,10 +1455,15 @@
     wirePick();
 
     initAnthem();
-    renderFanPoll();
-    renderFeed();
-    renderLedger();
-    renderPick();
+    DB.loadSession();
+
+    DB.sync().then(function () {
+      renderFanPoll();
+      renderFeed();
+      renderLedger();
+      renderPick();
+    });
+
     tickCountdown();
     refresh();
 

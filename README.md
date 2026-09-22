@@ -76,20 +76,14 @@ team automatically. Logins live in `CONFIG.users` at the top of `assets/js/app.j
 the credentials or write a pick straight into storage. It stops the wrong person from wandering in; it does
 not stop anyone who is trying. Do not reuse a password here that protects anything real.
 
-**Persistence is per browser.** Picks, ledger entries, fan-poll tallies and takes are kept in `localStorage`,
-so they survive refreshes, restarts and Home Screen launches on *that device*. They do not travel: a pick DrJ
-files on his phone is not visible on MW's laptop. GitHub Pages serves static files and has nowhere to keep
-shared state.
+**Persistence has two modes.** With `CONFIG.api.base` empty (the default) picks, ledger, takes, votes and
+poll tallies live in `localStorage`: they survive refreshes and Home Screen launches, but only on that device.
+Set `api.base` to the deployed sync Worker and all of it moves to Cloudflare KV, shared across every device,
+with real server-side auth and server-enforced turn and lock rules. The chip beside the ballot says which mode
+you are in: **This device only** or **Synced**.
 
-To make picks shared and tamper-resistant, the site needs a backend. The three usual routes:
-
-1. **A tiny serverless function** (Cloudflare Workers + KV, Netlify, Vercel) holding the pick behind a real
-   password check. Free tier, ~50 lines.
-2. **A hosted database with a client SDK** (Firebase, Supabase). Fastest to stand up; rules do the auth.
-3. **A form-backend service** (e.g. a private Gist via a token-scoped worker) if you only ever need append.
-
-Everything in the UI already goes through `load()` / `save()` helpers, so swapping the store for `fetch` calls
-is contained to those two functions plus the pick module.
+See [worker/README.md](worker/README.md) for the five-minute deploy. In shared mode, posting a take or voting
+requires signing in, so every take carries a name; in local mode anyone on that browser can post anonymously.
 
 ## Rolling to next week's game
 
