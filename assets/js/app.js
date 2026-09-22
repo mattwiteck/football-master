@@ -25,6 +25,13 @@
       gamecast: 'https://www.espn.com/nfl/game/_/gameId/401872947',
       boxscore: 'https://www.espn.com/nfl/boxscore/_/gameId/401872947',
       pbp: 'https://www.espn.com/nfl/playbyplay/_/gameId/401872947'
+    },
+    // The peon's tribute song. Drop the recording in assets/audio/ using any
+    // of these extensions — the page finds whichever one is actually there.
+    anthem: {
+      dir: 'assets/audio/',
+      basename: 'peon-anthem',
+      formats: ['mp3', 'm4a', 'wav', 'ogg', 'aac', 'opus']
     }
   };
 
@@ -280,6 +287,8 @@
       : (game.state === 'post' ? 'Final · ' + game.away.abbr + ' ' + game.away.score + ' – ' + game.home.abbr + ' ' + game.home.score
         : 'Kickoff ' + CONFIG.kickoff);
 
+    castAnthem(verdict, game);
+
     $('updatedStamp').textContent = 'Updated ' + new Date(game.fetchedAt).toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' });
     $('boardNote').hidden = true;
   }
@@ -503,6 +512,172 @@
     renderFeed();
   }
 
+  /* ========================================================== PEON'S ANTHEM */
+
+  var anthemEls = {};
+
+  function anthemCandidates() {
+    return CONFIG.anthem.formats.map(function (ext) {
+      return CONFIG.anthem.dir + CONFIG.anthem.basename + '.' + ext;
+    });
+  }
+
+  function fmtTime(sec) {
+    if (!isFinite(sec) || sec < 0) return '--:--';
+    var m = Math.floor(sec / 60);
+    var s = Math.floor(sec % 60);
+    return m + ':' + (s < 10 ? '0' : '') + s;
+  }
+
+  /**
+   * Find the recording without knowing its format: HEAD each candidate over
+   * http(s); off a file:// page HEAD is blocked, so let an <audio> element
+   * decide by trying to read each file's metadata.
+   */
+  function findAnthemFile() {
+    var urls = anthemCandidates();
+    var overHttp = /^https?:$/.test(location.protocol);
+
+    function viaHead(i) {
+      if (i >= urls.length) return Promise.resolve(null);
+      return fetch(urls[i], { method: 'HEAD', cache: 'no-store' })
+        .then(function (res) { return res.ok ? urls[i] : viaHead(i + 1); })
+        .catch(function () { return viaHead(i + 1); });
+    }
+
+    function viaAudio(i) {
+      if (i >= urls.length) return Promise.resolve(null);
+      return new Promise(function (resolve) {
+        var probe = new Audio();
+        probe.preload = 'metadata';
+        probe.onloadedmetadata = function () { resolve(urls[i]); };
+        probe.onerror = function () { resolve(null); };
+        probe.src = urls[i];
+      }).then(function (hit) { return hit || viaAudio(i + 1); });
+    }
+
+    return overHttp ? viaHead(0) : viaAudio(0);
+  }
+
+  function setAnthemState(state) {
+    anthemEls.wrap.setAttribute('data-state', state);
+  }
+
+  function armAnthem(url) {
+    var audio = anthemEls.audio;
+
+    anthemEls.play.disabled = false;
+    anthemEls.seek.disabled = false;
+    anthemEls.playLabel.textContent = 'Play the anthem';
+    anthemEls.note.textContent = 'Tribute delivered. Volume is the peon’s problem now.';
+    anthemEls.download.href = url;
+    anthemEls.download.hidden = false;
+    setAnthemState('ready');
+
+    anthemEls.play.addEventListener('click', function () {
+      if (audio.paused) {
+        audio.play().catch(function () {
+          anthemEls.note.textContent = 'Your browser blocked playback — tap play once more.';
+        });
+      } else {
+        audio.pause();
+      }
+    });
+
+    audio.addEventListener('play', function () {
+      setAnthemState('playing');
+      anthemEls.playLabel.textContent = 'Pause the anthem';
+    });
+
+    audio.addEventListener('pause', function () {
+      setAnthemState('ready');
+      anthemEls.playLabel.textContent = 'Resume the anthem';
+    });
+
+    audio.addEventListener('ended', function () {
+      setAnthemState('ready');
+      anthemEls.playLabel.textContent = 'Play it again';
+      anthemEls.seek.value = 0;
+      anthemEls.seek.style.setProperty('--progress', '0%');
+      anthemEls.now.textContent = '0:00';
+    });
+
+    ['loadedmetadata', 'durationchange'].forEach(function (evt) {
+      audio.addEventListener(evt, function () {
+        anthemEls.dur.textContent = fmtTime(audio.duration);
+      });
+    });
+
+    audio.addEventListener('timeupdate', function () {
+      if (!audio.duration) return;
+      var pct = (audio.currentTime / audio.duration) * 100;
+      anthemEls.seek.value = pct;
+      anthemEls.seek.style.setProperty('--progress', pct + '%');
+      anthemEls.now.textContent = fmtTime(audio.currentTime);
+    });
+
+    audio.addEventListener('error', function () {
+      setAnthemState('pending');
+      anthemEls.play.disabled = true;
+      anthemEls.seek.disabled = true;
+      anthemEls.playLabel.textContent = 'Recording unavailable';
+      anthemEls.note.textContent = 'The file is there but this browser cannot play it. Try the download link.';
+    });
+
+    anthemEls.seek.addEventListener('input', function () {
+      if (!audio.duration) return;
+      audio.currentTime = (anthemEls.seek.value / 100) * audio.duration;
+      anthemEls.seek.style.setProperty('--progress', anthemEls.seek.value + '%');
+    });
+
+    // Listeners first, then the source, so a fast (cached) load can't slip past them.
+    audio.src = url;
+  }
+
+  /** Name the singer and the crown once the game is final. */
+  function castAnthem(verdict, game) {
+    if (!anthemEls.wrap) return;
+    var known = verdict.master !== 'TBD' && verdict.peon !== 'TBD';
+
+    if (game.state === 'post' && known) {
+      anthemEls.kicker.textContent = 'Tonight’s tribute';
+      anthemEls.title.textContent = verdict.peon + ' sings for ' + verdict.master;
+      anthemEls.sub.textContent = verdict.peon + ' lost the throne and owes the Football Master a song. ' +
+        'Payment is non-negotiable.';
+    } else if (game.state === 'in' && known) {
+      anthemEls.kicker.textContent = 'Currently owed by';
+      anthemEls.title.textContent = verdict.peon + ' is warming up';
+      anthemEls.sub.textContent = 'If the scoreboard holds, ' + verdict.peon + ' sings the praises of ' +
+        verdict.master + ' when the clock hits zero.';
+    } else {
+      anthemEls.kicker.textContent = 'Tonight’s tribute';
+      anthemEls.title.textContent = 'The Peon’s Anthem';
+      anthemEls.sub.textContent = 'The loser sings the praises of the Football Master. Those are the rules.';
+    }
+  }
+
+  function initAnthem() {
+    anthemEls = {
+      wrap: $('anthem'),
+      audio: $('anthemAudio'),
+      play: $('anthemPlay'),
+      playLabel: $('anthemPlayLabel'),
+      seek: $('anthemSeek'),
+      now: $('anthemNow'),
+      dur: $('anthemDur'),
+      note: $('anthemNote'),
+      kicker: $('anthemKicker'),
+      title: $('anthemTitle'),
+      sub: $('anthemSub'),
+      download: $('anthemDownload')
+    };
+    if (!anthemEls.wrap) return;
+
+    findAnthemFile().then(function (url) {
+      if (url) armAnthem(url);
+    });
+  }
+
   /* ================================================================== init */
 
   function init() {
@@ -530,6 +705,7 @@
       input.value = '';
     });
 
+    initAnthem();
     renderBallot();
     renderFeed();
     refresh();

@@ -97,6 +97,7 @@
       <span class="brand__text">Football<em>Master</em></span>
     </a>
     <nav class="nav__links" aria-label="Primary">
+      <a href="#anthem">Anthem</a>
       <a href="#throne">Throne</a>
       <a href="#game">Live Game</a>
       <a href="#ballot">Ballot</a>
@@ -118,6 +119,44 @@
       <h1 class="hero__title">The Football Master Board</h1>
       <p class="hero__sub">One game. One throne. The scoreboard decides who rules and who serves.</p>
 
+      <!-- ============ PEON'S ANTHEM ============ -->
+      <!-- The loser of tonight's game owes the winner a song. This is where it plays. -->
+      <section class="anthem" id="anthem" data-state="pending" aria-labelledby="anthemTitle">
+        <div class="anthem__disc" aria-hidden="true">
+          <span class="anthem__disc-label">&#127944;</span>
+        </div>
+
+        <div class="anthem__body">
+          <p class="anthem__kicker" id="anthemKicker">Tonight&rsquo;s tribute</p>
+          <h2 class="anthem__title" id="anthemTitle">The Peon&rsquo;s Anthem</h2>
+          <p class="anthem__sub" id="anthemSub">The loser sings the praises of the Football Master. Those are the rules.</p>
+
+          <div class="anthem__controls">
+            <button class="anthem__play" id="anthemPlay" type="button" disabled>
+              <span class="anthem__icon" id="anthemIcon" aria-hidden="true"></span>
+              <span id="anthemPlayLabel">Awaiting the recording</span>
+            </button>
+
+            <div class="anthem__track">
+              <label class="sr-only" for="anthemSeek">Seek within the anthem</label>
+              <input class="anthem__seek" id="anthemSeek" type="range" min="0" max="100" value="0" step="0.1" disabled />
+              <div class="anthem__times">
+                <span id="anthemNow">0:00</span>
+                <span id="anthemDur">--:--</span>
+              </div>
+            </div>
+
+            <div class="anthem__eq" id="anthemEq" aria-hidden="true">
+              <i></i><i></i><i></i><i></i><i></i>
+            </div>
+          </div>
+
+          <p class="anthem__note" id="anthemNote">The peon has not yet paid his debt. Check back after the final whistle.</p>
+        </div>
+
+        <a class="anthem__dl" id="anthemDownload" href="#" download hidden>Download</a>
+        <audio id="anthemAudio" preload="metadata"></audio>
+      </section>
       <div class="thrones">
         <!-- LEFT: MASTER -->
         <article class="throne throne--master" id="masterCard" aria-live="polite">

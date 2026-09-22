@@ -17,6 +17,7 @@ The house rule drives the whole UI:
 - **Throne header** — big left/right pillars for Football Master and Football Peon, with the center verdict panel that reads *"MW is currently ahead for the Football Master spot"* (or DrJ) straight off the live score.
 - **Live scoreboard** — team logos, records, score, quarter and clock, refreshed every 30 seconds and whenever the tab regains focus.
 - **Real links** — ESPN Gamecast, box score, play-by-play, NFL.com scores, Rams broadcast/stream info, league scoreboard.
+- **The Peon's Anthem** — a gold plaque above the thrones where the loser's tribute song plays. It names the singer and the crown off the final score ("DrJ sings for MW"), and finds the recording whatever format it arrives in. See [assets/audio/README.md](assets/audio/README.md).
 - **Master Ballot** — head-to-head MW vs. DrJ vote with a live percentage bar.
 - **Voting Floor** — upvote/downvote feed of hot takes with Hot / Top / New sorting, plus a composer to post your own.
 
