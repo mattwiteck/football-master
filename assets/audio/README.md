@@ -23,6 +23,28 @@ The page probes those extensions in that order and plays the first one that exis
   ```
 - Keep it under ~20 MB. GitHub blocks files over 100 MB outright.
 
+## AMR and other phone formats
+
+**No browser plays `.amr`** — not Chrome, Safari, Firefox or Edge. Android voice recorders and some
+phone apps still produce it, so it has to be converted before it goes on the page.
+
+`footballpeontribute.amr` in this folder is the original recording, kept for provenance.
+`peon-anthem.mp3` is the converted copy the site actually plays.
+
+Windows can do the conversion with no software installed — Media Foundation decodes AMR-NB natively:
+
+```powershell
+# Windows PowerShell 5.1 (not pwsh 7)
+Add-Type -AssemblyName System.Runtime.WindowsRuntime
+# ...MediaTranscoder + MediaEncodingProfile::CreateMp3 — see the commit that added this file
+```
+
+With ffmpeg it is one line:
+
+```bash
+ffmpeg -i footballpeontribute.amr -codec:a libmp3lame -b:a 128k peon-anthem.mp3
+```
+
 ## Renaming
 
 To use a different filename, change `CONFIG.anthem.basename` at the top of `assets/js/app.js`.
