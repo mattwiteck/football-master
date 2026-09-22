@@ -15,8 +15,8 @@ const env = {
   TOKEN_SECRET: 'test-secret-not-the-real-one',
   ALLOW_ORIGIN: '*',
   USERS: JSON.stringify({
-    jjw007: { pass: 'mattisgreat', who: 'DrJ' },
-    matt:   { pass: 'matt1234',    who: 'MW' }
+    'test-drj': { pass: 'test-pass-1', who: 'DrJ' },
+    'test-mw':  { pass: 'test-pass-2', who: 'MW' }
   }),
   GAMES: JSON.stringify({
     401872948: { picker: 'DrJ', rival: 'MW', teams: ['ATL', 'GB'], lockAt: '2026-09-24T22:15:00Z' },
@@ -46,18 +46,18 @@ const post = (path, body, token) => call(path, {
 });
 
 console.log('\nlogin');
-let res = await post('/login', { user: 'jjw007', pass: 'wrong' });
+let res = await post('/login', { user: 'test-drj', pass: 'wrong' });
 check('wrong password rejected', res.status === 401);
 
 res = await post('/login', { user: 'nobody', pass: 'x' });
 check('unknown user rejected', res.status === 401);
 
-res = await post('/login', { user: 'JJW007', pass: 'mattisgreat' });
+res = await post('/login', { user: 'TEST-DRJ', pass: 'test-pass-1' });
 const drj = await res.json();
 check('DrJ logs in (case-insensitive)', res.status === 200 && drj.who === 'DrJ', JSON.stringify(drj));
 check('token issued', typeof drj.token === 'string' && drj.token.includes('.'));
 
-res = await post('/login', { user: 'matt', pass: 'matt1234' });
+res = await post('/login', { user: 'test-mw', pass: 'test-pass-2' });
 const mw = await res.json();
 check('MW logs in', mw.who === 'MW');
 

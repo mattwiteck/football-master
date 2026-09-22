@@ -43,7 +43,7 @@ Commit, push, and the site switches from "This device only" to "Synced".
 When `wrangler secret put USERS` prompts, paste one line of JSON:
 
 ```json
-{"jjw007":{"pass":"PICK-A-NEW-ONE","who":"DrJ"},"matt":{"pass":"PICK-A-NEW-ONE","who":"MW"}}
+{"<drj-login>":{"pass":"<drj-password>","who":"DrJ"},"<mw-login>":{"pass":"<mw-password>","who":"MW"}}
 ```
 
 **Choose new passwords here.** The ones currently in `assets/js/app.js` are in a public repo and in git history, so treat them as burned. Secrets set this way are stored by Cloudflare and never appear in the repo or in the browser.

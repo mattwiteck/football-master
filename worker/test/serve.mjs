@@ -19,8 +19,8 @@ const env = {
   TOKEN_SECRET: 'dev-secret',
   ALLOW_ORIGIN: '*',
   USERS: JSON.stringify({
-    jjw007: { pass: 'mattisgreat', who: 'DrJ' },
-    matt:   { pass: 'matt1234',    who: 'MW' }
+    'test-drj': { pass: 'test-pass-1', who: 'DrJ' },
+    'test-mw':  { pass: 'test-pass-2', who: 'MW' }
   }),
   GAMES: JSON.stringify({
     401872948: { picker: 'DrJ', rival: 'MW', teams: ['ATL', 'GB'], lockAt: '2026-09-24T22:15:00Z' }
