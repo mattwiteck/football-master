@@ -16,38 +16,41 @@
   /* ---------------------------------------------------------------- config */
 
   var CONFIG = {
-    // ---- the game already in the books: Giants at Rams, Mon Sep 21 2026
+    // ---- the game already in the books: Falcons at Packers, Thu Sep 24 2026.
+    // DrJ picked Green Bay, so MW inherited Atlanta; Atlanta won 35-14.
     crown: {
-      eventId: '401872947',
-      summaryUrl: 'https://site.api.espn.com/apis/site/v2/sports/football/nfl/summary?event=401872947',
-      label: 'Monday Night Football',
-      people: {
-        LAR: { who: 'MW', team: 'Los Angeles Rams' },
-        NYG: { who: 'DrJ', team: 'New York Giants' }
-      }
-    },
-
-    // ---- the game being picked: Falcons at Packers, Thu Sep 24 2026
-    upcoming: {
       eventId: '401872948',
       summaryUrl: 'https://site.api.espn.com/apis/site/v2/sports/football/nfl/summary?event=401872948',
       label: 'Thursday Night Football',
-      kickoffISO: '2026-09-25T00:15Z',   // 5:15 PM PT / 8:15 PM ET
+      people: {
+        ATL: { who: 'MW', team: 'Atlanta Falcons' },
+        GB: { who: 'DrJ', team: 'Green Bay Packers' }
+      }
+    },
+
+    // ---- the game being picked: Eagles at Bears, Mon Sep 28 2026
+    upcoming: {
+      eventId: '401872963',
+      summaryUrl: 'https://site.api.espn.com/apis/site/v2/sports/football/nfl/summary?event=401872963',
+      label: 'Monday Night Football',
+      kickoffISO: '2026-09-29T00:15Z',   // 5:15 PM PT / 8:15 PM ET
       kickoffLabel: '5:15 PM PT',
-      network: 'Prime Video',
-      lockMinutesBefore: 120,            // ballot seals two hours before kickoff
-      picker: 'DrJ',                     // whose turn it is to choose this week
-      rival: 'MW',                       // who inherits the other team
+      network: 'ESPN & ABC',
+      // One-game exception: the board only rolled over to this game after the
+      // usual two-hour deadline had already passed, so tonight it runs to kickoff.
+      lockMinutesBefore: 0,
+      picker: 'MW',                      // whose turn it is to choose this week
+      rival: 'DrJ',                      // who inherits the other team
       teams: {
-        ATL: { city: 'Atlanta', name: 'Falcons', full: 'Atlanta Falcons',
-               logo: 'https://a.espncdn.com/i/teamlogos/nfl/500/scoreboard/atl.png' },
-        GB:  { city: 'Green Bay', name: 'Packers', full: 'Green Bay Packers',
-               logo: 'https://a.espncdn.com/i/teamlogos/nfl/500/scoreboard/gb.png' }
+        PHI: { city: 'Philadelphia', name: 'Eagles', full: 'Philadelphia Eagles',
+               logo: 'https://a.espncdn.com/i/teamlogos/nfl/500/scoreboard/phi.png' },
+        CHI: { city: 'Chicago', name: 'Bears', full: 'Chicago Bears',
+               logo: 'https://a.espncdn.com/i/teamlogos/nfl/500/scoreboard/chi.png' }
       },
       gameLinks: {
-        gamecast: 'https://www.espn.com/nfl/game/_/gameId/401872948',
-        boxscore: 'https://www.espn.com/nfl/boxscore/_/gameId/401872948',
-        pbp: 'https://www.espn.com/nfl/playbyplay/_/gameId/401872948'
+        gamecast: 'https://www.espn.com/nfl/game/_/gameId/401872963',
+        boxscore: 'https://www.espn.com/nfl/boxscore/_/gameId/401872963',
+        pbp: 'https://www.espn.com/nfl/playbyplay/_/gameId/401872963'
       }
     },
 
@@ -64,15 +67,7 @@
     // side, so nothing sensitive sits in this file. These entries are only
     // consulted when api.base above is empty (offline/local mode), which
     // is why they are deliberately blank.
-    users: {},
-
-    // The peon's tribute song. Drop the recording in assets/audio/ using any
-    // of these extensions — the page finds whichever one is actually there.
-    anthem: {
-      dir: 'assets/audio/',
-      basename: 'peon-anthem',
-      formats: ['mp3', 'm4a', 'wav', 'ogg', 'aac', 'opus']
-    }
+    users: {}
   };
 
   var EVT = CONFIG.upcoming.eventId;
@@ -304,8 +299,6 @@
         verdict.leader.location + ' ' + verdict.leader.score + '–' + verdict.trailer.score + ' ' +
         verdict.trailer.location + '</b>';
     }
-
-    castAnthem(verdict, game);
   }
 
   /* ================================================ THE UPCOMING GAME */
@@ -362,7 +355,8 @@
     pulse.setAttribute('data-state',
       game.state === 'in' ? 'live' : (game.state === 'post' ? 'final' : 'idle'));
     $('navStatus').textContent = game.state === 'pre'
-      ? 'Thu · ' + CONFIG.upcoming.kickoffLabel
+      ? new Date(kickoffMs(game)).toLocaleDateString([], { weekday: 'short' }) +
+        ' · ' + CONFIG.upcoming.kickoffLabel
       : (game.state === 'in' ? 'Live · ' : 'Final · ') +
         game.away.abbr + ' ' + game.away.score + ' – ' + game.home.abbr + ' ' + game.home.score;
 
@@ -429,7 +423,7 @@
       $('cdM').textContent = '00'; $('cdS').textContent = '00';
       wrap.setAttribute('data-state', 'locked');
       $('cdLabel').textContent = latestUpcoming && latestUpcoming.state === 'post'
-        ? 'Final at Lambeau Field' : 'Kickoff has arrived';
+        ? 'Final at Soldier Field' : 'Kickoff has arrived';
     } else {
       var secs = Math.floor(left / 1000);
       $('cdD').textContent = pad(Math.floor(secs / 86400));
@@ -1183,166 +1177,18 @@
     $('navAuth').scrollIntoView({ block: 'nearest' });
   }
 
-  /* ========================================================== PEON'S ANTHEM */
-
-  var anthemEls = {};
-
-  function anthemCandidates() {
-    return CONFIG.anthem.formats.map(function (ext) {
-      return CONFIG.anthem.dir + CONFIG.anthem.basename + '.' + ext;
-    });
-  }
-
-  function fmtTime(sec) {
-    if (!isFinite(sec) || sec < 0) return '--:--';
-    var m = Math.floor(sec / 60);
-    var s = Math.floor(sec % 60);
-    return m + ':' + (s < 10 ? '0' : '') + s;
-  }
-
-  /**
-   * Find the recording without knowing its format: HEAD each candidate over
-   * http(s); off a file:// page HEAD is blocked, so let an <audio> element
-   * decide by trying to read each file's metadata.
-   */
-  function findAnthemFile() {
-    var urls = anthemCandidates();
-    var overHttp = /^https?:$/.test(location.protocol);
-
-    function viaHead(i) {
-      if (i >= urls.length) return Promise.resolve(null);
-      return fetch(urls[i], { method: 'HEAD', cache: 'no-store' })
-        .then(function (res) { return res.ok ? urls[i] : viaHead(i + 1); })
-        .catch(function () { return viaHead(i + 1); });
-    }
-
-    function viaAudio(i) {
-      if (i >= urls.length) return Promise.resolve(null);
-      return new Promise(function (resolve) {
-        var probe = new Audio();
-        probe.preload = 'metadata';
-        probe.onloadedmetadata = function () { resolve(urls[i]); };
-        probe.onerror = function () { resolve(null); };
-        probe.src = urls[i];
-      }).then(function (hit) { return hit || viaAudio(i + 1); });
-    }
-
-    return overHttp ? viaHead(0) : viaAudio(0);
-  }
-
-  function setAnthemState(state) { anthemEls.wrap.setAttribute('data-state', state); }
-
-  function armAnthem(url) {
-    var audio = anthemEls.audio;
-
-    anthemEls.play.disabled = false;
-    anthemEls.seek.disabled = false;
-    anthemEls.playLabel.textContent = 'Play the anthem';
-    anthemEls.note.textContent = 'Tribute delivered. Volume is the peon’s problem now.';
-    anthemEls.download.href = url;
-    anthemEls.download.hidden = false;
-    setAnthemState('ready');
-
-    anthemEls.play.addEventListener('click', function () {
-      if (audio.paused) {
-        audio.play().catch(function () {
-          anthemEls.note.textContent = 'Your browser blocked playback — tap play once more.';
-        });
-      } else {
-        audio.pause();
-      }
-    });
-
-    audio.addEventListener('play', function () {
-      setAnthemState('playing');
-      anthemEls.playLabel.textContent = 'Pause the anthem';
-    });
-
-    audio.addEventListener('pause', function () {
-      setAnthemState('ready');
-      anthemEls.playLabel.textContent = 'Resume the anthem';
-    });
-
-    audio.addEventListener('ended', function () {
-      setAnthemState('ready');
-      anthemEls.playLabel.textContent = 'Play it again';
-      anthemEls.seek.value = 0;
-      anthemEls.seek.style.setProperty('--progress', '0%');
-      anthemEls.now.textContent = '0:00';
-    });
-
-    ['loadedmetadata', 'durationchange'].forEach(function (evt) {
-      audio.addEventListener(evt, function () {
-        anthemEls.dur.textContent = fmtTime(audio.duration);
-      });
-    });
-
-    audio.addEventListener('timeupdate', function () {
-      if (!audio.duration) return;
-      var pct = (audio.currentTime / audio.duration) * 100;
-      anthemEls.seek.value = pct;
-      anthemEls.seek.style.setProperty('--progress', pct + '%');
-      anthemEls.now.textContent = fmtTime(audio.currentTime);
-    });
-
-    audio.addEventListener('error', function () {
-      setAnthemState('pending');
-      anthemEls.play.disabled = true;
-      anthemEls.seek.disabled = true;
-      anthemEls.playLabel.textContent = 'Recording unavailable';
-      anthemEls.note.textContent = 'The file is there but this browser cannot play it. Try the download link.';
-    });
-
-    anthemEls.seek.addEventListener('input', function () {
-      if (!audio.duration) return;
-      audio.currentTime = (anthemEls.seek.value / 100) * audio.duration;
-      anthemEls.seek.style.setProperty('--progress', anthemEls.seek.value + '%');
-    });
-
-    // Listeners first, then the source, so a fast (cached) load can't slip past them.
-    audio.src = url;
-  }
-
-  /** Name the singer and the crown once the game is final. */
-  function castAnthem(verdict, game) {
-    if (!anthemEls.wrap) return;
-    var known = verdict.master !== 'TBD' && verdict.peon !== 'TBD';
-
-    if (game.state === 'post' && known) {
-      anthemEls.kicker.textContent = 'This week’s tribute';
-      anthemEls.title.textContent = verdict.peon + ' sings for ' + verdict.master;
-      anthemEls.sub.textContent = verdict.peon + ' lost the throne and owes the Football Master a song. ' +
-        'Payment is non-negotiable.';
-    } else {
-      anthemEls.kicker.textContent = 'This week’s tribute';
-      anthemEls.title.textContent = 'The Peon’s Anthem';
-      anthemEls.sub.textContent = 'The loser sings the praises of the Football Master. Those are the rules.';
-    }
-  }
-
-  function initAnthem() {
-    anthemEls = {
-      wrap: $('anthem'), audio: $('anthemAudio'), play: $('anthemPlay'),
-      playLabel: $('anthemPlayLabel'), seek: $('anthemSeek'), now: $('anthemNow'),
-      dur: $('anthemDur'), note: $('anthemNote'), kicker: $('anthemKicker'),
-      title: $('anthemTitle'), sub: $('anthemSub'), download: $('anthemDownload')
-    };
-    if (!anthemEls.wrap) return;
-    findAnthemFile().then(function (url) { if (url) armAnthem(url); });
-  }
-
   /* ========================================================== VOTING FLOOR */
 
   var HOUR = 3600000;
 
   // Seeded debate topics. Scores are demo starting values; real votes stack on top.
   var SEED_TAKES = [
-    { id: 't1', text: 'Lambeau on a short week is where visiting teams go to disappear.', side: null, base: 38, agoH: 3, link: CONFIG.upcoming.gameLinks.gamecast, linkLabel: 'Gamecast' },
-    { id: 't2', text: 'Atlanta is 0-2 and desperate. Desperate teams cover on Thursday.', side: null, base: 31, agoH: 5, link: 'https://www.espn.com/nfl/team/_/name/atl/atlanta-falcons', linkLabel: 'Falcons hub' },
-    { id: 't3', text: 'Green Bay at home in prime time is the safest pick on the board. DrJ takes it and sleeps fine.', side: 'DrJ', base: 27, agoH: 7, link: 'https://www.espn.com/nfl/team/_/name/gb/green-bay-packers', linkLabel: 'Packers hub' },
-    { id: 't4', text: 'Whoever wins the turnover battle wins this game. It is not more complicated than that.', side: null, base: 19, agoH: 9, link: CONFIG.upcoming.gameLinks.pbp, linkLabel: 'Play-by-play' },
-    { id: 't5', text: 'MW got handed the leftovers this week and will somehow still be insufferable about it.', side: 'MW', base: 16, agoH: 11, link: CONFIG.upcoming.gameLinks.boxscore, linkLabel: 'Box score' },
-    { id: 't6', text: 'The real question is who is singing next Sunday. Start warming up now.', side: null, base: 13, agoH: 13, link: 'https://www.nfl.com/standings/', linkLabel: 'Standings' }
+    { id: 'w4a', text: 'Soldier Field in late September is where undefeated records go to get tested.', side: null, base: 36, agoH: 3, link: CONFIG.upcoming.gameLinks.gamecast, linkLabel: 'Gamecast' },
+    { id: 'w4b', text: 'Philadelphia is 2-0 and nobody has really hit them yet. Chicago hits.', side: null, base: 29, agoH: 5, link: 'https://www.espn.com/nfl/team/_/name/chi/chicago-bears', linkLabel: 'Bears hub' },
+    { id: 'w4c', text: 'Taking the 2-0 road team in prime time is the boring pick, and boring pays.', side: 'MW', base: 24, agoH: 7, link: 'https://www.espn.com/nfl/team/_/name/phi/philadelphia-eagles', linkLabel: 'Eagles hub' },
+    { id: 'w4d', text: 'Wind off the lake turns this into a running game by the fourth quarter.', side: null, base: 18, agoH: 9, link: CONFIG.upcoming.gameLinks.pbp, linkLabel: 'Play-by-play' },
+    { id: 'w4e', text: 'DrJ is on a one-game losing streak and taking it extremely well, as always.', side: 'DrJ', base: 15, agoH: 11, link: CONFIG.upcoming.gameLinks.boxscore, linkLabel: 'Box score' },
+    { id: 'w4f', text: 'Loser scrubs the helmets. Same as it ever was.', side: null, base: 12, agoH: 13, link: 'https://www.nfl.com/standings/', linkLabel: 'Standings' }
   ];
 
   var sortMode = 'hot';
@@ -1599,7 +1445,6 @@
     wirePick();
     wireNavAuth();
 
-    initAnthem();
     DB.loadSession();
     renderNavAuth();
 
