@@ -2,6 +2,10 @@
    Run: node test/local-test.mjs                                          */
 import worker from '../src/worker.js';
 
+// Locks are relative to now so the suite cannot rot as dates pass.
+const OPEN_LOCK = new Date(Date.now() + 86400000).toISOString();   // tomorrow
+const PAST_LOCK = new Date(Date.now() - 86400000).toISOString();   // yesterday
+
 const kv = new Map();
 const env = {
   FM: {
@@ -19,8 +23,8 @@ const env = {
     'test-mw':  { pass: 'test-pass-2', who: 'MW' }
   }),
   GAMES: JSON.stringify({
-    401872948: { picker: 'DrJ', rival: 'MW', teams: ['ATL', 'GB'], lockAt: '2026-09-24T22:15:00Z' },
-    999999999: { picker: 'DrJ', rival: 'MW', teams: ['ATL', 'GB'], lockAt: '2020-01-01T00:00:00Z' }
+    401872948: { picker: 'DrJ', rival: 'MW', teams: ['ATL', 'GB'], lockAt: OPEN_LOCK },
+    999999999: { picker: 'DrJ', rival: 'MW', teams: ['ATL', 'GB'], lockAt: PAST_LOCK }
   })
 };
 
