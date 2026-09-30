@@ -31,6 +31,7 @@
     // ---- the losing side's tribute song, linked from the middle card
     tribute: {
       url: 'https://suno.com/s/EDEdEqdRzEfLdAkt',
+      title: 'John, The King of the Ball',
       host: 'Suno'
     },
 
@@ -321,8 +322,9 @@
 
     $('tributeLink').href = song.url;
     $('tributeLabel').textContent = 'Play ' + verdict.peon + '\u2019s tribute';
-    $('tributeNote').textContent = verdict.peon + ' lost the crown and paid up. Written for ' +
-      verdict.master + (song.host ? ', hosted on ' + song.host + '.' : '.');
+    $('tributeNote').textContent = (song.title ? '“' + song.title + '” · ' : '') +
+      verdict.peon + ' lost the crown and paid up. Written for ' + verdict.master +
+      (song.host ? ', hosted on ' + song.host + '.' : '.');
   }
 
   /* ================================================ THE UPCOMING GAME */
