@@ -30,6 +30,7 @@
 
     // ---- the losing side's tribute song, linked from the middle card
     tribute: {
+      file: 'assets/audio/peon-anthem.mp3',   // plays inline when present
       url: 'https://suno.com/s/EDEdEqdRzEfLdAkt',
       title: 'John, The King of the Ball',
       host: 'Suno'
@@ -309,22 +310,109 @@
   }
 
   /** The loser owes a song. When one is on file, the middle card plays it. */
+  var tributeArmed = false;
+
+  function fmtTime(sec) {
+    if (!isFinite(sec) || sec < 0) return '--:--';
+    var m = Math.floor(sec / 60);
+    var s = Math.floor(sec % 60);
+    return m + ':' + (s < 10 ? '0' : '') + s;
+  }
+
   function renderTribute(verdict, game) {
     var wrap = $('verdictTribute');
     if (!wrap) return;
 
     var song = CONFIG.tribute;
     var known = verdict.master !== 'TBD' && verdict.peon !== 'TBD';
-    var ready = !!(song && song.url) && game.state === 'post' && known;
+    var ready = !!(song && (song.file || song.url)) && game.state === 'post' && known;
 
     wrap.hidden = !ready;
     if (!ready) return;
 
-    $('tributeLink').href = song.url;
     $('tributeLabel').textContent = 'Play ' + verdict.peon + '\u2019s tribute';
-    $('tributeNote').textContent = (song.title ? '“' + song.title + '” · ' : '') +
-      verdict.peon + ' lost the crown and paid up. Written for ' + verdict.master +
-      (song.host ? ', hosted on ' + song.host + '.' : '.');
+    $('tributeNote').textContent = (song.title ? '\u201c' + song.title + '\u201d \u00b7 ' : '') +
+      verdict.peon + ' lost the crown and paid up. Written for ' + verdict.master + '.';
+
+    var link = $('tributeLink');
+    link.hidden = !song.url;
+    if (song.url) {
+      link.href = song.url;
+      link.textContent = 'Listen on ' + (song.host || 'the original') + ' \u2197';
+    }
+
+    if (song.file) armTribute(song.file);
+  }
+
+  /** Wire the audio element once; a missing file falls back to the link. */
+  function armTribute(url) {
+    if (tributeArmed) return;
+    tributeArmed = true;
+
+    var wrap = $('verdictTribute');
+    var audio = $('tributeAudio');
+    var btn = $('tributePlay');
+    var seek = $('tributeSeek');
+
+    btn.addEventListener('click', function () {
+      if (audio.paused) {
+        audio.play().catch(function () {
+          // A late rejection must not stomp on a state that has moved on.
+          if (audio.paused) $('tributeLabel').textContent = 'Tap play once more';
+        });
+      } else {
+        audio.pause();
+      }
+    });
+
+    audio.addEventListener('play', function () {
+      wrap.classList.add('is-playing');
+      $('tributeLabel').textContent = 'Pause';
+    });
+
+    audio.addEventListener('pause', function () {
+      wrap.classList.remove('is-playing');
+      $('tributeLabel').textContent = 'Resume';
+    });
+
+    audio.addEventListener('ended', function () {
+      wrap.classList.remove('is-playing');
+      $('tributeLabel').textContent = 'Play it again';
+      seek.value = 0;
+      seek.style.setProperty('--progress', '0%');
+      $('tributeNow').textContent = '0:00';
+    });
+
+    ['loadedmetadata', 'durationchange'].forEach(function (evt) {
+      audio.addEventListener(evt, function () {
+        $('tributeDur').textContent = fmtTime(audio.duration);
+        btn.disabled = false;
+        $('tributeTrack').hidden = false;
+      });
+    });
+
+    audio.addEventListener('timeupdate', function () {
+      if (!audio.duration) return;
+      var pct = (audio.currentTime / audio.duration) * 100;
+      seek.value = pct;
+      seek.style.setProperty('--progress', pct + '%');
+      $('tributeNow').textContent = fmtTime(audio.currentTime);
+    });
+
+    audio.addEventListener('error', function () {
+      // No local file: the link below is still the way in.
+      btn.disabled = true;
+      $('tributeTrack').hidden = true;
+      $('tributeLabel').textContent = 'Play the tribute';
+    });
+
+    seek.addEventListener('input', function () {
+      if (!audio.duration) return;
+      audio.currentTime = (seek.value / 100) * audio.duration;
+      seek.style.setProperty('--progress', seek.value + '%');
+    });
+
+    audio.src = url;
   }
 
   /* ================================================ THE UPCOMING GAME */

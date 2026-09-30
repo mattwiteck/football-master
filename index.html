@@ -17,7 +17,7 @@
 <link rel="preconnect" href="https://fonts.googleapis.com" />
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@600;700&amp;family=Caveat:wght@600;700&amp;family=Inter:wght@400;500;600;700&amp;display=swap" />
-<link rel="stylesheet" href="assets/css/styles.css?v=12" />
+<link rel="stylesheet" href="assets/css/styles.css?v=13" />
 
 <!-- Self-contained styling for the iOS "install" banner below — kept inline so it doesn't depend on styles.css -->
 <style>
@@ -173,11 +173,23 @@
           <p class="verdict__text" id="verdictText">Loading tonight&rsquo;s game&hellip;</p>
           <p class="verdict__detail" id="verdictDetail">Pulling the live scoreboard.</p>
           <div class="verdict__tribute" id="verdictTribute" hidden>
-            <a class="tribute" id="tributeLink" href="#" target="_blank" rel="noopener">
+            <button class="tribute" id="tributePlay" type="button" disabled>
               <span class="tribute__icon" aria-hidden="true"></span>
               <span id="tributeLabel">Play the tribute</span>
-            </a>
+            </button>
+
+            <div class="tribute__track" id="tributeTrack" hidden>
+              <label class="sr-only" for="tributeSeek">Seek within the tribute</label>
+              <input class="tribute__seek" id="tributeSeek" type="range" min="0" max="100" value="0" step="0.1" />
+              <div class="tribute__times">
+                <span id="tributeNow">0:00</span>
+                <span id="tributeDur">--:--</span>
+              </div>
+            </div>
+
             <p class="tribute__note" id="tributeNote">&nbsp;</p>
+            <a class="tribute__src" id="tributeLink" href="#" target="_blank" rel="noopener">Listen on Suno &#8599;</a>
+            <audio id="tributeAudio" preload="metadata"></audio>
           </div>
 
           <div class="verdict__mini" id="verdictMini" hidden>
@@ -519,7 +531,7 @@
   </div>
 </footer>
 
-<script src="assets/js/app.js?v=12"></script>
+<script src="assets/js/app.js?v=13"></script>
 
 <!-- Shows the "Add to Home Screen" banner only for iPhone/iPad Safari visitors who haven't installed the app yet -->
 <script>
