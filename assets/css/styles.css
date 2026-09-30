@@ -19,8 +19,8 @@
 
   --lar:           #4b8fd6;   /* Rams blue, brightened for dark UI */
   --nyg:           #e8434f;   /* Giants red, brightened for dark UI */
-  --phi:           #35b48f;   /* Eagles green, brightened for dark UI */
-  --chi:           #f2762e;   /* Bears orange, brightened for dark UI */
+  --pit:           #ffd24a;   /* Steelers gold, brightened for dark UI */
+  --cle:           #ff5c26;   /* Browns orange, brightened for dark UI */
   --live:          #35d07f;
 
   --radius:        18px;
@@ -397,6 +397,33 @@ a { color: inherit; }
 
 .verdict__detail { font-size: .85rem; color: var(--text-dim); }
 
+/* ---- tribute button, centre card ---- */
+.verdict__tribute {
+  margin-top: 4px; padding-top: 12px;
+  border-top: 1px solid var(--line-soft);
+}
+
+.tribute {
+  display: inline-flex; align-items: center; gap: 9px;
+  padding: 9px 17px 9px 13px; border-radius: 999px;
+  text-decoration: none; font-size: .8rem; font-weight: 700;
+  color: #1a1206;
+  background: linear-gradient(180deg, var(--gold), var(--gold-deep));
+  box-shadow: 0 6px 18px rgba(245, 196, 81, .26);
+  transition: transform .2s var(--ease), box-shadow .2s var(--ease);
+}
+.tribute:hover { transform: translateY(-2px); box-shadow: 0 10px 24px rgba(245, 196, 81, .38); }
+
+.tribute__icon {
+  width: 0; height: 0; flex: none; margin-left: 2px;
+  border-style: solid; border-width: 6px 0 6px 10px;
+  border-color: transparent transparent transparent currentColor;
+}
+
+.tribute__note {
+  margin-top: 8px; font-size: .72rem; line-height: 1.45; color: var(--text-faint);
+}
+
 .verdict__mini {
   display: flex; align-items: center; justify-content: center; gap: 12px;
   margin-top: 4px; padding-top: 12px; border-top: 1px solid var(--line-soft);
@@ -492,8 +519,8 @@ a { color: inherit; }
   line-height: 1; margin-top: 6px;
   transition: color .3s var(--ease);
 }
-#awayCol .board__score { color: var(--phi); }
-#homeCol .board__score { color: var(--chi); }
+#awayCol .board__score { color: var(--pit); }
+#homeCol .board__score { color: var(--cle); }
 /* Before kickoff the placeholder dash should not read as a team-coloured bar. */
 .board[data-state="pre"] .board__score { color: var(--text-faint); }
 #awayCol.is-trailing .board__score,
@@ -568,13 +595,13 @@ a { color: inherit; }
   transition: transform .25s var(--ease), border-color .25s var(--ease), box-shadow .25s var(--ease);
 }
 .ballot__side:hover { transform: translateY(-3px); box-shadow: var(--shadow-sm); }
-.ballot__side--away:hover, .ballot__side--away.is-voted { border-color: var(--phi); }
-.ballot__side--home:hover, .ballot__side--home.is-voted { border-color: var(--chi); }
+.ballot__side--away:hover, .ballot__side--away.is-voted { border-color: var(--pit); }
+.ballot__side--home:hover, .ballot__side--home.is-voted { border-color: var(--cle); }
 .ballot__side.is-voted .ballot__cta { color: var(--gold); }
 
 .ballot__who { font-size: 2.4rem; text-transform: uppercase; }
-.ballot__side--away .ballot__who { color: var(--phi); }
-.ballot__side--home .ballot__who { color: var(--chi); }
+.ballot__side--away .ballot__who { color: var(--pit); }
+.ballot__side--home .ballot__who { color: var(--cle); }
 .ballot__team { font-size: .82rem; color: var(--text-dim); }
 .ballot__cta {
   margin-top: 8px; font-size: .68rem; font-weight: 700; letter-spacing: .16em;
@@ -584,11 +611,11 @@ a { color: inherit; }
 .ballot__meter { text-align: center; }
 .ballot__bar {
   height: 14px; border-radius: 999px; overflow: hidden;
-  background: var(--chi); border: 1px solid var(--line);
+  background: var(--cle); border: 1px solid var(--line);
 }
 .ballot__bar span {
   display: block; height: 100%; width: 50%;
-  background: var(--phi);
+  background: var(--pit);
   transition: width .6s var(--ease);
 }
 .ballot__nums {
