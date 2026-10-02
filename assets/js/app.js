@@ -16,47 +16,51 @@
   /* ---------------------------------------------------------------- config */
 
   var CONFIG = {
-    // ---- the game already in the books: Eagles at Bears, Mon Sep 28 2026.
-    // MW picked Philadelphia, so DrJ inherited Chicago; Chicago won 27-7.
+    // ---- the game already in the books: Steelers at Browns, Thu Oct 1 2026.
+    // DrJ picked Cleveland, so MW inherited Pittsburgh; Cleveland won 27-24.
     crown: {
-      eventId: '401872963',
-      summaryUrl: 'https://site.api.espn.com/apis/site/v2/sports/football/nfl/summary?event=401872963',
-      label: 'Monday Night Football',
+      eventId: '401872964',
+      summaryUrl: 'https://site.api.espn.com/apis/site/v2/sports/football/nfl/summary?event=401872964',
+      label: 'Thursday Night Football',
       people: {
-        CHI: { who: 'DrJ', team: 'Chicago Bears' },
-        PHI: { who: 'MW', team: 'Philadelphia Eagles' }
+        CLE: { who: 'DrJ', team: 'Cleveland Browns' },
+        PIT: { who: 'MW', team: 'Pittsburgh Steelers' }
       }
     },
 
     // ---- the losing side's tribute song, linked from the middle card
+    // One song per game, named for the week it settles:
+    //   peon-anthemW<week><a|b>.mp3   a = Thursday game, b = Monday game
+    // Point `file` at the current one; `title` and `url` are optional credits.
     tribute: {
-      file: 'assets/audio/peon-anthem.mp3',   // plays inline when present
-      url: 'https://suno.com/s/EDEdEqdRzEfLdAkt',
-      title: 'John, The King of the Ball',
+      file: 'assets/audio/peon-anthemW4a.mp3',
+      title: '',
+      url: '',
       host: 'Suno'
     },
 
-    // ---- the game being picked: Steelers at Browns, Thu Oct 1 2026
+    // ---- the game being picked: Falcons at Saints, Mon Oct 5 2026
     upcoming: {
-      eventId: '401872964',
-      summaryUrl: 'https://site.api.espn.com/apis/site/v2/sports/football/nfl/summary?event=401872964',
-      label: 'Thursday Night Football',
-      kickoffISO: '2026-10-02T00:15Z',   // 5:15 PM PT / 8:15 PM ET
+      eventId: '401872979',
+      summaryUrl: 'https://site.api.espn.com/apis/site/v2/sports/football/nfl/summary?event=401872979',
+      label: 'Monday Night Football',
+      navLabel: 'Monday',
+      kickoffISO: '2026-10-06T00:15Z',   // 5:15 PM PT / 8:15 PM ET
       kickoffLabel: '5:15 PM PT',
-      network: 'Prime Video',
-      lockMinutesBefore: 120,            // back to the usual two-hour deadline
-      picker: 'DrJ',                     // whose turn it is to choose this week
-      rival: 'MW',                       // who inherits the other team
+      network: 'ESPN',
+      lockMinutesBefore: 120,
+      picker: 'MW',                      // whose turn it is to choose this week
+      rival: 'DrJ',                      // who inherits the other team
       teams: {
-        PIT: { city: 'Pittsburgh', name: 'Steelers', full: 'Pittsburgh Steelers',
-               logo: 'https://a.espncdn.com/i/teamlogos/nfl/500/scoreboard/pit.png' },
-        CLE: { city: 'Cleveland', name: 'Browns', full: 'Cleveland Browns',
-               logo: 'https://a.espncdn.com/i/teamlogos/nfl/500/scoreboard/cle.png' }
+        ATL: { city: 'Atlanta', name: 'Falcons', full: 'Atlanta Falcons',
+               logo: 'https://a.espncdn.com/i/teamlogos/nfl/500/scoreboard/atl.png' },
+        NO:  { city: 'New Orleans', name: 'Saints', full: 'New Orleans Saints',
+               logo: 'https://a.espncdn.com/i/teamlogos/nfl/500/scoreboard/no.png' }
       },
       gameLinks: {
-        gamecast: 'https://www.espn.com/nfl/game/_/gameId/401872964',
-        boxscore: 'https://www.espn.com/nfl/boxscore/_/gameId/401872964',
-        pbp: 'https://www.espn.com/nfl/playbyplay/_/gameId/401872964'
+        gamecast: 'https://www.espn.com/nfl/game/_/gameId/401872979',
+        boxscore: 'https://www.espn.com/nfl/boxscore/_/gameId/401872979',
+        pbp: 'https://www.espn.com/nfl/playbyplay/_/gameId/401872979'
       }
     },
 
@@ -537,7 +541,8 @@
       $('cdM').textContent = '00'; $('cdS').textContent = '00';
       wrap.setAttribute('data-state', 'locked');
       $('cdLabel').textContent = latestUpcoming && latestUpcoming.state === 'post'
-        ? 'Final in Cleveland' : 'Kickoff has arrived';
+        ? 'Final in ' + CONFIG.upcoming.teams[Object.keys(CONFIG.upcoming.teams)[1]].city
+        : 'Kickoff has arrived';
     } else {
       var secs = Math.floor(left / 1000);
       $('cdD').textContent = pad(Math.floor(secs / 86400));
@@ -1297,12 +1302,12 @@
 
   // Seeded debate topics. Scores are demo starting values; real votes stack on top.
   var SEED_TAKES = [
-    { id: 'w5a', text: 'Steelers at Browns on a Thursday is going to be 13-10 and everyone knows it.', side: null, base: 34, agoH: 3, link: CONFIG.upcoming.gameLinks.gamecast, linkLabel: 'Gamecast' },
-    { id: 'w5b', text: 'Both 2-1, both ugly, both mean it. This is the most AFC North game ever scheduled.', side: null, base: 28, agoH: 5, link: 'https://www.nfl.com/standings/', linkLabel: 'Standings' },
-    { id: 'w5c', text: 'Cleveland at home in a division game is live. DrJ should think twice about the road team.', side: 'DrJ', base: 23, agoH: 7, link: 'https://www.espn.com/nfl/team/_/name/cle/cleveland-browns', linkLabel: 'Browns hub' },
-    { id: 'w5d', text: 'Whoever protects the quarterback wins. Neither of these defenses is polite about it.', side: null, base: 19, agoH: 9, link: CONFIG.upcoming.gameLinks.pbp, linkLabel: 'Play-by-play' },
-    { id: 'w5e', text: 'MW is one song into this rivalry and already an experienced recording artist.', side: 'MW', base: 16, agoH: 11, link: CONFIG.upcoming.gameLinks.boxscore, linkLabel: 'Box score' },
-    { id: 'w5f', text: 'Two weeks, two crowns, two different heads. Nobody is safe.', side: null, base: 12, agoH: 13, link: 'https://www.espn.com/nfl/team/_/name/pit/pittsburgh-steelers', linkLabel: 'Steelers hub' }
+    { id: 'w6a', text: 'The Superdome on a Monday night is the loudest building in the sport. That still counts for something.', side: null, base: 33, agoH: 3, link: CONFIG.upcoming.gameLinks.gamecast, linkLabel: 'Gamecast' },
+    { id: 'w6b', text: 'Two 1-2 teams in a division game. Somebody saves their season tonight and somebody buries it.', side: null, base: 27, agoH: 5, link: 'https://www.nfl.com/standings/', linkLabel: 'Standings' },
+    { id: 'w6c', text: 'Atlanta already handed MW a crown once this season. Worth remembering before he picks.', side: 'MW', base: 24, agoH: 7, link: 'https://www.espn.com/nfl/team/_/name/atl/atlanta-falcons', linkLabel: 'Falcons hub' },
+    { id: 'w6d', text: 'New Orleans at home is a different team entirely. Road splits in this rivalry are absurd.', side: null, base: 20, agoH: 9, link: 'https://www.espn.com/nfl/team/_/name/no/new-orleans-saints', linkLabel: 'Saints hub' },
+    { id: 'w6e', text: 'DrJ has two crowns in a row and the smugness is becoming a public health concern.', side: 'DrJ', base: 17, agoH: 11, link: CONFIG.upcoming.gameLinks.boxscore, linkLabel: 'Box score' },
+    { id: 'w6f', text: 'MW now has a back catalogue. At this rate he needs a record label, not a football team.', side: 'MW', base: 14, agoH: 13, link: CONFIG.upcoming.gameLinks.pbp, linkLabel: 'Play-by-play' }
   ];
 
   var sortMode = 'hot';
@@ -1530,6 +1535,13 @@
   }
 
   function init() {
+    // The section heading and its nav entry come from the config now.
+    if ($('gameHeading')) $('gameHeading').textContent = CONFIG.upcoming.label;
+    if ($('gameNavLink')) {
+      $('gameNavLink').textContent = CONFIG.upcoming.navLabel ||
+        CONFIG.upcoming.label.split(' ')[0];
+    }
+
     $('refreshBtn').addEventListener('click', refresh);
 
     Array.prototype.forEach.call(document.querySelectorAll('[data-ballot]'), function (el) {
