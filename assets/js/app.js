@@ -34,7 +34,7 @@
     // Point `file` at the current one; `title` and `url` are optional credits.
     tribute: {
       file: 'assets/audio/peon-anthemW4a.mp3',
-      title: '',
+      title: 'John is not the Peon',
       url: '',
       host: 'Suno'
     },
@@ -49,7 +49,9 @@
       kickoffLabel: '5:15 PM PT',
       network: 'ESPN',
       lockMinutesBefore: 120,
-      picker: 'MW',                      // whose turn it is to choose this week
+      // The pick alternates every game, regardless of who won:
+      // DrJ -> MW -> DrJ -> MW. Swap these two each week.
+      picker: 'MW',
       rival: 'DrJ',                      // who inherits the other team
       teams: {
         ATL: { city: 'Atlanta', name: 'Falcons', full: 'Atlanta Falcons',
