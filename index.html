@@ -17,7 +17,7 @@
 <link rel="preconnect" href="https://fonts.googleapis.com" />
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@600;700&amp;family=Caveat:wght@600;700&amp;family=Inter:wght@400;500;600;700&amp;display=swap" />
-<link rel="stylesheet" href="assets/css/styles.css?v=15" />
+<link rel="stylesheet" href="assets/css/styles.css?v=16" />
 
 <!-- Self-contained styling for the iOS "install" banner below — kept inline so it doesn't depend on styles.css -->
 <style>
@@ -173,6 +173,9 @@
           <p class="verdict__text" id="verdictText">Loading tonight&rsquo;s game&hellip;</p>
           <p class="verdict__detail" id="verdictDetail">Pulling the live scoreboard.</p>
           <div class="verdict__tribute" id="verdictTribute" hidden>
+            <p class="tribute__tag" id="tributeTag">&nbsp;</p>
+            <p class="tribute__title" id="tributeTitle">&nbsp;</p>
+
             <button class="tribute" id="tributePlay" type="button" disabled>
               <span class="tribute__icon" aria-hidden="true"></span>
               <span id="tributeLabel">Play the tribute</span>
@@ -531,7 +534,7 @@
   </div>
 </footer>
 
-<script src="assets/js/app.js?v=15"></script>
+<script src="assets/js/app.js?v=16"></script>
 
 <!-- Shows the "Add to Home Screen" banner only for iPhone/iPad Safari visitors who haven't installed the app yet -->
 <script>

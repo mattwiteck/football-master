@@ -325,6 +325,15 @@
     return m + ':' + (s < 10 ? '0' : '') + s;
   }
 
+  /** 'Week 4 \u00b7 Thursday game', read off a name like peon-anthemW4a.mp3. */
+  function tributeTag(song) {
+    if (song.tag) return song.tag;
+    var m = /W(\d+)([ab])/i.exec(song.file || '');
+    if (!m) return '';
+    return 'Week ' + m[1] + ' \u00b7 ' +
+      (m[2].toLowerCase() === 'a' ? 'Thursday' : 'Monday') + ' game';
+  }
+
   function renderTribute(verdict, game) {
     var wrap = $('verdictTribute');
     if (!wrap) return;
@@ -336,9 +345,13 @@
     wrap.hidden = !ready;
     if (!ready) return;
 
+    $('tributeTag').textContent = tributeTag(song);
+    $('tributeTitle').textContent = song.title ? '\u201c' + song.title + '\u201d' : '';
+    $('tributeTitle').hidden = !song.title;
+
     $('tributeLabel').textContent = 'Play ' + verdict.peon + '\u2019s tribute';
-    $('tributeNote').textContent = (song.title ? '\u201c' + song.title + '\u201d \u00b7 ' : '') +
-      verdict.peon + ' lost the crown and paid up. Written for ' + verdict.master + '.';
+    $('tributeNote').textContent = verdict.peon + ' lost the crown and paid up. Written for ' +
+      verdict.master + '.';
 
     var link = $('tributeLink');
     link.hidden = !song.url;
