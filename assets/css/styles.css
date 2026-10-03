@@ -750,6 +750,13 @@ a { color: inherit; }
 }
 .foot__inner { display: flex; flex-wrap: wrap; gap: 8px; justify-content: space-between; align-items: center; }
 .foot p { font-size: .82rem; color: var(--text-dim); }
+.foot__link {
+  font-size: .78rem; font-weight: 600; color: var(--text-dim);
+  text-decoration: none; white-space: nowrap;
+  padding: 6px 0;
+}
+.foot__link:hover { color: var(--gold); }
+
 .foot__meta { color: var(--text-faint) !important; font-size: .74rem !important; }
 
 /* ==========================================================================
@@ -1136,11 +1143,16 @@ a { color: inherit; }
 .navmenu { position: relative; flex: none; }
 
 .navmenu__btn {
-  font: inherit; font-size: .72rem; font-weight: 700; font-style: italic;
-  width: 26px; height: 26px; border-radius: 50%; cursor: pointer;
+  font: inherit; font-size: .82rem; font-weight: 700; font-style: italic;
+  width: 32px; height: 32px; border-radius: 50%; cursor: pointer;
   display: grid; place-items: center;
-  background: transparent; border: 1px solid var(--line); color: var(--text-faint);
-  transition: color .2s var(--ease), border-color .2s var(--ease);
+  background: rgba(255, 255, 255, .05); border: 1px solid var(--line); color: var(--text-dim);
+  transition: color .2s var(--ease), border-color .2s var(--ease), background .2s var(--ease);
+  position: relative;
+}
+/* Widen the touch target past the circle without changing how it looks. */
+.navmenu__btn::after {
+  content: ""; position: absolute; inset: -7px; border-radius: 50%;
 }
 .navmenu__btn:hover,
 .navmenu__btn[aria-expanded="true"] { color: var(--text); border-color: var(--text-faint); }
