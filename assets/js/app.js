@@ -402,11 +402,13 @@
       $('tributeNow').textContent = '0:00';
     });
 
+    // Playable straight away; duration catches up when the header is read.
+    btn.disabled = false;
+    $('tributeTrack').hidden = false;
+
     ['loadedmetadata', 'durationchange'].forEach(function (evt) {
       audio.addEventListener(evt, function () {
         $('tributeDur').textContent = fmtTime(audio.duration);
-        btn.disabled = false;
-        $('tributeTrack').hidden = false;
       });
     });
 
@@ -1549,6 +1551,29 @@
       : 'Mark a team to sign the ballot.';
   }
 
+  /** The info menu: same open/close manners as the sign-in panel. */
+  function wireNavMenu() {
+    var btn = $('navMenuBtn');
+    var panel = $('navMenuPanel');
+    if (!btn || !panel) return;
+
+    function open(show) {
+      panel.hidden = !show;
+      btn.setAttribute('aria-expanded', String(!!show));
+    }
+
+    btn.addEventListener('click', function (e) {
+      e.stopPropagation();
+      open(panel.hidden);
+    });
+
+    panel.addEventListener('click', function (e) { e.stopPropagation(); });
+    document.addEventListener('click', function () { if (!panel.hidden) open(false); });
+    document.addEventListener('keydown', function (e) {
+      if (e.key === 'Escape' && !panel.hidden) { open(false); btn.focus(); }
+    });
+  }
+
   function init() {
     // The section heading and its nav entry come from the config now.
     if ($('gameHeading')) $('gameHeading').textContent = CONFIG.upcoming.label;
@@ -1585,6 +1610,7 @@
 
     wirePick();
     wireNavAuth();
+    wireNavMenu();
 
     DB.loadSession();
     renderNavAuth();

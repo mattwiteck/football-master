@@ -17,7 +17,7 @@
 <link rel="preconnect" href="https://fonts.googleapis.com" />
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@600;700&amp;family=Caveat:wght@600;700&amp;family=Inter:wght@400;500;600;700&amp;display=swap" />
-<link rel="stylesheet" href="assets/css/styles.css?v=16" />
+<link rel="stylesheet" href="assets/css/styles.css?v=17" />
 
 <!-- Self-contained styling for the iOS "install" banner below — kept inline so it doesn't depend on styles.css -->
 <style>
@@ -106,6 +106,21 @@
     <div class="nav__status">
       <span class="pulse" id="navPulse" data-state="loading" aria-hidden="true"></span>
       <span id="navStatus">Connecting&hellip;</span>
+    </div>
+
+    <!-- Quiet info menu: the way through to the tribute page, deliberately understated. -->
+    <div class="navmenu" id="navMenu">
+      <button class="navmenu__btn" id="navMenuBtn" type="button"
+              aria-expanded="false" aria-controls="navMenuPanel" aria-label="More from the board">
+        <span aria-hidden="true">i</span>
+      </button>
+
+      <div class="navmenu__panel" id="navMenuPanel" hidden>
+        <a class="navmenu__item" href="for-john.html">
+          <span class="navmenu__item-k">For John</span>
+          <span class="navmenu__item-v">A note from the family, and a song</span>
+        </a>
+      </div>
     </div>
 
     <!-- Sign in from anywhere: the ballot, a vote or a post can all open this. -->
@@ -534,7 +549,7 @@
   </div>
 </footer>
 
-<script src="assets/js/app.js?v=16"></script>
+<script src="assets/js/app.js?v=17"></script>
 
 <!-- Shows the "Add to Home Screen" banner only for iPhone/iPad Safari visitors who haven't installed the app yet -->
 <script>
