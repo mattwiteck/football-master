@@ -19,8 +19,8 @@
 
   --lar:           #4b8fd6;   /* Rams blue, brightened for dark UI */
   --nyg:           #e8434f;   /* Giants red, brightened for dark UI */
-  --atl:           #ef4d59;   /* Falcons red, brightened for dark UI */
-  --no:            #cbb682;   /* Saints old gold, muted so it reads apart from the crown */
+  --tb:            #ef4d59;   /* Buccaneers red, brightened for dark UI */
+  --dal:           #8fa3b8;   /* Cowboys silver, cool so it reads apart from the crown */
   --live:          #35d07f;
 
   --radius:        18px;
@@ -574,8 +574,8 @@ a { color: inherit; }
   line-height: 1; margin-top: 6px;
   transition: color .3s var(--ease);
 }
-#awayCol .board__score { color: var(--atl); }
-#homeCol .board__score { color: var(--no); }
+#awayCol .board__score { color: var(--tb); }
+#homeCol .board__score { color: var(--dal); }
 /* Before kickoff the placeholder dash should not read as a team-coloured bar. */
 .board[data-state="pre"] .board__score { color: var(--text-faint); }
 #awayCol.is-trailing .board__score,
@@ -650,13 +650,13 @@ a { color: inherit; }
   transition: transform .25s var(--ease), border-color .25s var(--ease), box-shadow .25s var(--ease);
 }
 .ballot__side:hover { transform: translateY(-3px); box-shadow: var(--shadow-sm); }
-.ballot__side--away:hover, .ballot__side--away.is-voted { border-color: var(--atl); }
-.ballot__side--home:hover, .ballot__side--home.is-voted { border-color: var(--no); }
+.ballot__side--away:hover, .ballot__side--away.is-voted { border-color: var(--tb); }
+.ballot__side--home:hover, .ballot__side--home.is-voted { border-color: var(--dal); }
 .ballot__side.is-voted .ballot__cta { color: var(--gold); }
 
 .ballot__who { font-size: 2.4rem; text-transform: uppercase; }
-.ballot__side--away .ballot__who { color: var(--atl); }
-.ballot__side--home .ballot__who { color: var(--no); }
+.ballot__side--away .ballot__who { color: var(--tb); }
+.ballot__side--home .ballot__who { color: var(--dal); }
 .ballot__team { font-size: .82rem; color: var(--text-dim); }
 .ballot__cta {
   margin-top: 8px; font-size: .68rem; font-weight: 700; letter-spacing: .16em;
@@ -666,11 +666,11 @@ a { color: inherit; }
 .ballot__meter { text-align: center; }
 .ballot__bar {
   height: 14px; border-radius: 999px; overflow: hidden;
-  background: var(--no); border: 1px solid var(--line);
+  background: var(--dal); border: 1px solid var(--line);
 }
 .ballot__bar span {
   display: block; height: 100%; width: 50%;
-  background: var(--atl);
+  background: var(--tb);
   transition: width .6s var(--ease);
 }
 .ballot__nums {

@@ -16,15 +16,15 @@
   /* ---------------------------------------------------------------- config */
 
   var CONFIG = {
-    // ---- the game already in the books: Steelers at Browns, Thu Oct 1 2026.
-    // DrJ picked Cleveland, so MW inherited Pittsburgh; Cleveland won 27-24.
+    // ---- the game already in the books: Falcons at Saints, Mon Oct 5 2026.
+    // MW picked New Orleans, so DrJ inherited Atlanta; Atlanta won 45-24.
     crown: {
-      eventId: '401872964',
-      summaryUrl: 'https://site.api.espn.com/apis/site/v2/sports/football/nfl/summary?event=401872964',
-      label: 'Thursday Night Football',
+      eventId: '401872979',
+      summaryUrl: 'https://site.api.espn.com/apis/site/v2/sports/football/nfl/summary?event=401872979',
+      label: 'Monday Night Football',
       people: {
-        CLE: { who: 'DrJ', team: 'Cleveland Browns' },
-        PIT: { who: 'MW', team: 'Pittsburgh Steelers' }
+        ATL: { who: 'DrJ', team: 'Atlanta Falcons' },
+        NO: { who: 'MW', team: 'New Orleans Saints' }
       }
     },
 
@@ -33,36 +33,36 @@
     //   peon-anthemW<week><a|b>.mp3   a = Thursday game, b = Monday game
     // Point `file` at the current one; `title` and `url` are optional credits.
     tribute: {
-      file: 'assets/audio/peon-anthemW4a.mp3',
-      title: 'John is not the Peon',
+      file: 'assets/audio/peon-anthemW4b.mp3',
+      title: 'John Didn\u2019t Lose',
       url: '',
       host: 'Suno'
     },
 
-    // ---- the game being picked: Falcons at Saints, Mon Oct 5 2026
+    // ---- the game being picked: Buccaneers at Cowboys, Thu Oct 8 2026
     upcoming: {
-      eventId: '401872979',
-      summaryUrl: 'https://site.api.espn.com/apis/site/v2/sports/football/nfl/summary?event=401872979',
-      label: 'Monday Night Football',
-      navLabel: 'Monday',
-      kickoffISO: '2026-10-06T00:15Z',   // 5:15 PM PT / 8:15 PM ET
+      eventId: '401872980',
+      summaryUrl: 'https://site.api.espn.com/apis/site/v2/sports/football/nfl/summary?event=401872980',
+      label: 'Thursday Night Football',
+      navLabel: 'Thursday',
+      kickoffISO: '2026-10-09T00:15Z',   // 5:15 PM PT / 8:15 PM ET
       kickoffLabel: '5:15 PM PT',
-      network: 'ESPN',
+      network: 'Prime Video',
       lockMinutesBefore: 120,
       // The pick alternates every game, regardless of who won:
       // DrJ -> MW -> DrJ -> MW. Swap these two each week.
-      picker: 'MW',
-      rival: 'DrJ',                      // who inherits the other team
+      picker: 'DrJ',
+      rival: 'MW',                       // who inherits the other team
       teams: {
-        ATL: { city: 'Atlanta', name: 'Falcons', full: 'Atlanta Falcons',
-               logo: 'https://a.espncdn.com/i/teamlogos/nfl/500/scoreboard/atl.png' },
-        NO:  { city: 'New Orleans', name: 'Saints', full: 'New Orleans Saints',
-               logo: 'https://a.espncdn.com/i/teamlogos/nfl/500/scoreboard/no.png' }
+        TB:  { city: 'Tampa Bay', name: 'Buccaneers', full: 'Tampa Bay Buccaneers',
+               logo: 'https://a.espncdn.com/i/teamlogos/nfl/500/scoreboard/tb.png' },
+        DAL: { city: 'Dallas', name: 'Cowboys', full: 'Dallas Cowboys',
+               logo: 'https://a.espncdn.com/i/teamlogos/nfl/500/scoreboard/dal.png' }
       },
       gameLinks: {
-        gamecast: 'https://www.espn.com/nfl/game/_/gameId/401872979',
-        boxscore: 'https://www.espn.com/nfl/boxscore/_/gameId/401872979',
-        pbp: 'https://www.espn.com/nfl/playbyplay/_/gameId/401872979'
+        gamecast: 'https://www.espn.com/nfl/game/_/gameId/401872980',
+        boxscore: 'https://www.espn.com/nfl/boxscore/_/gameId/401872980',
+        pbp: 'https://www.espn.com/nfl/playbyplay/_/gameId/401872980'
       }
     },
 
@@ -1319,12 +1319,12 @@
 
   // Seeded debate topics. Scores are demo starting values; real votes stack on top.
   var SEED_TAKES = [
-    { id: 'w6a', text: 'The Superdome on a Monday night is the loudest building in the sport. That still counts for something.', side: null, base: 33, agoH: 3, link: CONFIG.upcoming.gameLinks.gamecast, linkLabel: 'Gamecast' },
-    { id: 'w6b', text: 'Two 1-2 teams in a division game. Somebody saves their season tonight and somebody buries it.', side: null, base: 27, agoH: 5, link: 'https://www.nfl.com/standings/', linkLabel: 'Standings' },
-    { id: 'w6c', text: 'Atlanta already handed MW a crown once this season. Worth remembering before he picks.', side: 'MW', base: 24, agoH: 7, link: 'https://www.espn.com/nfl/team/_/name/atl/atlanta-falcons', linkLabel: 'Falcons hub' },
-    { id: 'w6d', text: 'New Orleans at home is a different team entirely. Road splits in this rivalry are absurd.', side: null, base: 20, agoH: 9, link: 'https://www.espn.com/nfl/team/_/name/no/new-orleans-saints', linkLabel: 'Saints hub' },
-    { id: 'w6e', text: 'DrJ has two crowns in a row and the smugness is becoming a public health concern.', side: 'DrJ', base: 17, agoH: 11, link: CONFIG.upcoming.gameLinks.boxscore, linkLabel: 'Box score' },
-    { id: 'w6f', text: 'MW now has a back catalogue. At this rate he needs a record label, not a football team.', side: 'MW', base: 14, agoH: 13, link: CONFIG.upcoming.gameLinks.pbp, linkLabel: 'Play-by-play' }
+    { id: 'w7a', text: 'An 0-4 team in Arlington on a Thursday. This is either a blowout or the upset of the season, nothing between.', side: null, base: 32, agoH: 3, link: CONFIG.upcoming.gameLinks.gamecast, linkLabel: 'Gamecast' },
+    { id: 'w7b', text: 'Tampa Bay are winless and that makes them the most dangerous team on the schedule. Ask anyone.', side: null, base: 26, agoH: 5, link: 'https://www.espn.com/nfl/team/_/name/tb/tampa-bay-buccaneers', linkLabel: 'Buccaneers hub' },
+    { id: 'w7c', text: 'Taking Dallas at home is the obvious call, and the obvious call has been printing crowns lately.', side: 'DrJ', base: 23, agoH: 7, link: 'https://www.espn.com/nfl/team/_/name/dal/dallas-cowboys', linkLabel: 'Cowboys hub' },
+    { id: 'w7d', text: 'Three crowns in a row for DrJ. At some point this stops being luck and starts being a problem.', side: 'DrJ', base: 19, agoH: 9, link: CONFIG.upcoming.gameLinks.boxscore, linkLabel: 'Box score' },
+    { id: 'w7e', text: 'MW is now a three album artist. The range is impressive even if the football is not.', side: 'MW', base: 16, agoH: 11, link: CONFIG.upcoming.gameLinks.pbp, linkLabel: 'Play-by-play' },
+    { id: 'w7f', text: 'Somebody check the rules. There has to be a mercy clause in here somewhere.', side: null, base: 13, agoH: 13, link: 'https://www.nfl.com/standings/', linkLabel: 'Standings' }
   ];
 
   var sortMode = 'hot';
