@@ -35,7 +35,7 @@
     // Point `file` at the current one; `title` and `url` are optional credits.
     tribute: {
       file: 'assets/audio/peon-anthemW5a.mp3',
-      title: '',
+      title: 'Dallas Dizzyness',
       url: '',
       host: 'Suno'
     },
