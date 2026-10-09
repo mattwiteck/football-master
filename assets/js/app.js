@@ -16,15 +16,16 @@
   /* ---------------------------------------------------------------- config */
 
   var CONFIG = {
-    // ---- the game already in the books: Falcons at Saints, Mon Oct 5 2026.
-    // MW picked New Orleans, so DrJ inherited Atlanta; Atlanta won 45-24.
+    // ---- the game already in the books: Buccaneers at Cowboys, Thu Oct 8 2026.
+    // DrJ picked Dallas, so MW inherited Tampa Bay; Tampa Bay won 24-16 and
+    // the crown changed hands for the first time in three games.
     crown: {
-      eventId: '401872979',
-      summaryUrl: 'https://site.api.espn.com/apis/site/v2/sports/football/nfl/summary?event=401872979',
-      label: 'Monday Night Football',
+      eventId: '401872980',
+      summaryUrl: 'https://site.api.espn.com/apis/site/v2/sports/football/nfl/summary?event=401872980',
+      label: 'Thursday Night Football',
       people: {
-        ATL: { who: 'DrJ', team: 'Atlanta Falcons' },
-        NO: { who: 'MW', team: 'New Orleans Saints' }
+        TB: { who: 'MW', team: 'Tampa Bay Buccaneers' },
+        DAL: { who: 'DrJ', team: 'Dallas Cowboys' }
       }
     },
 
@@ -33,36 +34,36 @@
     //   peon-anthemW<week><a|b>.mp3   a = Thursday game, b = Monday game
     // Point `file` at the current one; `title` and `url` are optional credits.
     tribute: {
-      file: 'assets/audio/peon-anthemW4b.mp3',
-      title: 'John Didn\u2019t Lose',
+      file: 'assets/audio/peon-anthemW5a.mp3',
+      title: '',
       url: '',
       host: 'Suno'
     },
 
-    // ---- the game being picked: Buccaneers at Cowboys, Thu Oct 8 2026
+    // ---- the game being picked: Bills at Rams, Mon Oct 12 2026
     upcoming: {
-      eventId: '401872980',
-      summaryUrl: 'https://site.api.espn.com/apis/site/v2/sports/football/nfl/summary?event=401872980',
-      label: 'Thursday Night Football',
-      navLabel: 'Thursday',
-      kickoffISO: '2026-10-09T00:15Z',   // 5:15 PM PT / 8:15 PM ET
+      eventId: '401872994',
+      summaryUrl: 'https://site.api.espn.com/apis/site/v2/sports/football/nfl/summary?event=401872994',
+      label: 'Monday Night Football',
+      navLabel: 'Monday',
+      kickoffISO: '2026-10-13T00:15Z',   // 5:15 PM PT / 8:15 PM ET
       kickoffLabel: '5:15 PM PT',
-      network: 'Prime Video',
+      network: 'ESPN & ABC',
       lockMinutesBefore: 120,
       // The pick alternates every game, regardless of who won:
       // DrJ -> MW -> DrJ -> MW. Swap these two each week.
-      picker: 'DrJ',
-      rival: 'MW',                       // who inherits the other team
+      picker: 'MW',
+      rival: 'DrJ',                      // who inherits the other team
       teams: {
-        TB:  { city: 'Tampa Bay', name: 'Buccaneers', full: 'Tampa Bay Buccaneers',
-               logo: 'https://a.espncdn.com/i/teamlogos/nfl/500/scoreboard/tb.png' },
-        DAL: { city: 'Dallas', name: 'Cowboys', full: 'Dallas Cowboys',
-               logo: 'https://a.espncdn.com/i/teamlogos/nfl/500/scoreboard/dal.png' }
+        BUF: { city: 'Buffalo', name: 'Bills', full: 'Buffalo Bills',
+               logo: 'https://a.espncdn.com/i/teamlogos/nfl/500/scoreboard/buf.png' },
+        LAR: { city: 'Los Angeles', name: 'Rams', full: 'Los Angeles Rams',
+               logo: 'https://a.espncdn.com/i/teamlogos/nfl/500/scoreboard/lar.png' }
       },
       gameLinks: {
-        gamecast: 'https://www.espn.com/nfl/game/_/gameId/401872980',
-        boxscore: 'https://www.espn.com/nfl/boxscore/_/gameId/401872980',
-        pbp: 'https://www.espn.com/nfl/playbyplay/_/gameId/401872980'
+        gamecast: 'https://www.espn.com/nfl/game/_/gameId/401872994',
+        boxscore: 'https://www.espn.com/nfl/boxscore/_/gameId/401872994',
+        pbp: 'https://www.espn.com/nfl/playbyplay/_/gameId/401872994'
       }
     },
 
@@ -1319,12 +1320,12 @@
 
   // Seeded debate topics. Scores are demo starting values; real votes stack on top.
   var SEED_TAKES = [
-    { id: 'w7a', text: 'An 0-4 team in Arlington on a Thursday. This is either a blowout or the upset of the season, nothing between.', side: null, base: 32, agoH: 3, link: CONFIG.upcoming.gameLinks.gamecast, linkLabel: 'Gamecast' },
-    { id: 'w7b', text: 'Tampa Bay are winless and that makes them the most dangerous team on the schedule. Ask anyone.', side: null, base: 26, agoH: 5, link: 'https://www.espn.com/nfl/team/_/name/tb/tampa-bay-buccaneers', linkLabel: 'Buccaneers hub' },
-    { id: 'w7c', text: 'Taking Dallas at home is the obvious call, and the obvious call has been printing crowns lately.', side: 'DrJ', base: 23, agoH: 7, link: 'https://www.espn.com/nfl/team/_/name/dal/dallas-cowboys', linkLabel: 'Cowboys hub' },
-    { id: 'w7d', text: 'Three crowns in a row for DrJ. At some point this stops being luck and starts being a problem.', side: 'DrJ', base: 19, agoH: 9, link: CONFIG.upcoming.gameLinks.boxscore, linkLabel: 'Box score' },
-    { id: 'w7e', text: 'MW is now a three album artist. The range is impressive even if the football is not.', side: 'MW', base: 16, agoH: 11, link: CONFIG.upcoming.gameLinks.pbp, linkLabel: 'Play-by-play' },
-    { id: 'w7f', text: 'Somebody check the rules. There has to be a mercy clause in here somewhere.', side: null, base: 13, agoH: 13, link: 'https://www.nfl.com/standings/', linkLabel: 'Standings' }
+    { id: 'w8a', text: 'The 0-4 team won in Arlington and the whole rivalry flipped on it. Never take the chalk.', side: null, base: 35, agoH: 3, link: CONFIG.upcoming.gameLinks.gamecast, linkLabel: 'Gamecast' },
+    { id: 'w8b', text: 'Buffalo at 3-1 going into SoFi is the best team either of them has had to choose from all season.', side: null, base: 29, agoH: 5, link: 'https://www.espn.com/nfl/team/_/name/buf/buffalo-bills', linkLabel: 'Bills hub' },
+    { id: 'w8c', text: 'The Rams already decided one crown this season. MW should remember which way that went.', side: 'MW', base: 24, agoH: 7, link: 'https://www.espn.com/nfl/team/_/name/lar/los-angeles-rams', linkLabel: 'Rams hub' },
+    { id: 'w8d', text: 'Three crowns, then nothing. That is the most DrJ sequence of events imaginable.', side: 'DrJ', base: 21, agoH: 9, link: CONFIG.upcoming.gameLinks.boxscore, linkLabel: 'Box score' },
+    { id: 'w8e', text: 'After three weeks of recording, MW finally gets to sit and listen for once.', side: 'MW', base: 18, agoH: 11, link: CONFIG.upcoming.gameLinks.pbp, linkLabel: 'Play-by-play' },
+    { id: 'w8f', text: 'Welcome to the Peon seat, John. The acoustics in here are famously good.', side: null, base: 15, agoH: 13, link: 'https://www.nfl.com/standings/', linkLabel: 'Standings' }
   ];
 
   var sortMode = 'hot';

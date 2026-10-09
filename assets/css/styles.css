@@ -17,10 +17,10 @@
   --gold-deep:     #b8862b;
   --gold-glow:     rgba(245, 196, 81, .28);
 
-  --lar:           #4b8fd6;   /* Rams blue, brightened for dark UI */
-  --nyg:           #e8434f;   /* Giants red, brightened for dark UI */
-  --tb:            #ef4d59;   /* Buccaneers red, brightened for dark UI */
-  --dal:           #8fa3b8;   /* Cowboys silver, cool so it reads apart from the crown */
+  --mw:            #4b8fd6;   /* MW, on badges and the fan bar */
+  --drj:           #e8434f;   /* DrJ, and the error / downvote states */
+  --team-away:     #ef4d59;   /* this week: Bills red */
+  --team-home:     #4b8fd6;   /* this week: Rams blue */
   --live:          #35d07f;
 
   --radius:        18px;
@@ -145,7 +145,7 @@ a { color: inherit; }
   animation: ping 1.8s infinite;
 }
 .pulse[data-state="final"] { background: var(--gold); }
-.pulse[data-state="error"]  { background: var(--nyg); }
+.pulse[data-state="error"]  { background: var(--drj); }
 
 @keyframes ping {
   70%  { box-shadow: 0 0 0 9px rgba(53, 208, 127, 0); }
@@ -574,8 +574,8 @@ a { color: inherit; }
   line-height: 1; margin-top: 6px;
   transition: color .3s var(--ease);
 }
-#awayCol .board__score { color: var(--tb); }
-#homeCol .board__score { color: var(--dal); }
+#awayCol .board__score { color: var(--team-away); }
+#homeCol .board__score { color: var(--team-home); }
 /* Before kickoff the placeholder dash should not read as a team-coloured bar. */
 .board[data-state="pre"] .board__score { color: var(--text-faint); }
 #awayCol.is-trailing .board__score,
@@ -650,13 +650,13 @@ a { color: inherit; }
   transition: transform .25s var(--ease), border-color .25s var(--ease), box-shadow .25s var(--ease);
 }
 .ballot__side:hover { transform: translateY(-3px); box-shadow: var(--shadow-sm); }
-.ballot__side--away:hover, .ballot__side--away.is-voted { border-color: var(--tb); }
-.ballot__side--home:hover, .ballot__side--home.is-voted { border-color: var(--dal); }
+.ballot__side--away:hover, .ballot__side--away.is-voted { border-color: var(--team-away); }
+.ballot__side--home:hover, .ballot__side--home.is-voted { border-color: var(--team-home); }
 .ballot__side.is-voted .ballot__cta { color: var(--gold); }
 
 .ballot__who { font-size: 2.4rem; text-transform: uppercase; }
-.ballot__side--away .ballot__who { color: var(--tb); }
-.ballot__side--home .ballot__who { color: var(--dal); }
+.ballot__side--away .ballot__who { color: var(--team-away); }
+.ballot__side--home .ballot__who { color: var(--team-home); }
 .ballot__team { font-size: .82rem; color: var(--text-dim); }
 .ballot__cta {
   margin-top: 8px; font-size: .68rem; font-weight: 700; letter-spacing: .16em;
@@ -666,11 +666,11 @@ a { color: inherit; }
 .ballot__meter { text-align: center; }
 .ballot__bar {
   height: 14px; border-radius: 999px; overflow: hidden;
-  background: var(--dal); border: 1px solid var(--line);
+  background: var(--team-home); border: 1px solid var(--line);
 }
 .ballot__bar span {
   display: block; height: 100%; width: 50%;
-  background: var(--tb);
+  background: var(--team-away);
   transition: width .6s var(--ease);
 }
 .ballot__nums {
@@ -715,7 +715,7 @@ a { color: inherit; }
 }
 .vote:hover { color: var(--text); border-color: var(--text-faint); }
 .vote[aria-pressed="true"].vote--up   { color: var(--live); border-color: var(--live); background: rgba(53, 208, 127, .12); }
-.vote[aria-pressed="true"].vote--down { color: var(--nyg);   border-color: var(--nyg);   background: rgba(232, 67, 79, .12); }
+.vote[aria-pressed="true"].vote--down { color: var(--drj);   border-color: var(--drj);   background: rgba(232, 67, 79, .12); }
 
 .take__score {
   font-weight: 700; font-variant-numeric: tabular-nums; font-size: .95rem;
@@ -732,8 +732,8 @@ a { color: inherit; }
   font-size: .62rem; font-weight: 700; letter-spacing: .12em; text-transform: uppercase;
   padding: 3px 9px; border-radius: 999px; border: 1px solid var(--line); color: var(--text-dim);
 }
-.take__badge[data-side="MW"]  { color: var(--lar); border-color: rgba(75, 143, 214, .45); }
-.take__badge[data-side="DrJ"] { color: var(--nyg);  border-color: rgba(232, 67, 79, .45); }
+.take__badge[data-side="MW"]  { color: var(--mw); border-color: rgba(75, 143, 214, .45); }
+.take__badge[data-side="DrJ"] { color: var(--drj);  border-color: rgba(232, 67, 79, .45); }
 .take__badge[data-side="You"] { color: var(--gold); border-color: rgba(245, 196, 81, .45); }
 .take__meta a { color: var(--text-dim); }
 .take__meta a:hover { color: var(--gold); }
