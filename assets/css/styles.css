@@ -19,8 +19,8 @@
 
   --mw:            #4b8fd6;   /* MW, on badges and the fan bar */
   --drj:           #e8434f;   /* DrJ, and the error / downvote states */
-  --team-away:     #ef4d59;   /* this week: Bills red */
-  --team-home:     #4b8fd6;   /* this week: Rams blue */
+  --team-away:     #5fc24b;   /* this week: Seahawks green */
+  --team-home:     #fb6a2a;   /* this week: Broncos orange */
   --live:          #35d07f;
 
   --radius:        18px;
@@ -444,6 +444,24 @@ a { color: inherit; }
 .verdict__tribute.is-playing .tribute__icon {
   width: 10px; height: 12px; margin-left: 0;
   border-width: 0 3px; border-color: currentColor;
+}
+
+.tribute__switch {
+  display: flex; gap: 6px; justify-content: center; flex-wrap: wrap;
+  margin-top: 12px;
+}
+
+.tribute__pill {
+  font: inherit; font-size: .66rem; font-weight: 700;
+  letter-spacing: .1em; text-transform: uppercase;
+  padding: 6px 12px; border-radius: 999px; cursor: pointer;
+  background: transparent; border: 1px solid var(--line); color: var(--text-faint);
+  transition: all .2s var(--ease);
+}
+.tribute__pill:hover { color: var(--text); }
+.tribute__pill.is-active {
+  background: rgba(245, 196, 81, .14); color: var(--gold);
+  border-color: rgba(245, 196, 81, .45);
 }
 
 .tribute__track { margin-top: 10px; }

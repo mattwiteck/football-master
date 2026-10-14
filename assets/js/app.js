@@ -16,16 +16,15 @@
   /* ---------------------------------------------------------------- config */
 
   var CONFIG = {
-    // ---- the game already in the books: Buccaneers at Cowboys, Thu Oct 8 2026.
-    // DrJ picked Dallas, so MW inherited Tampa Bay; Tampa Bay won 24-16 and
-    // the crown changed hands for the first time in three games.
+    // ---- the game already in the books: Bills at Rams, Mon Oct 12 2026.
+    // MW picked Buffalo, so DrJ inherited the Rams; Buffalo won 37-34 in OT.
     crown: {
-      eventId: '401872980',
-      summaryUrl: 'https://site.api.espn.com/apis/site/v2/sports/football/nfl/summary?event=401872980',
-      label: 'Thursday Night Football',
+      eventId: '401872994',
+      summaryUrl: 'https://site.api.espn.com/apis/site/v2/sports/football/nfl/summary?event=401872994',
+      label: 'Monday Night Football',
       people: {
-        TB: { who: 'MW', team: 'Tampa Bay Buccaneers' },
-        DAL: { who: 'DrJ', team: 'Dallas Cowboys' }
+        BUF: { who: 'MW', team: 'Buffalo Bills' },
+        LAR: { who: 'DrJ', team: 'Los Angeles Rams' }
       }
     },
 
@@ -34,36 +33,40 @@
     //   peon-anthemW<week><a|b>.mp3   a = Thursday game, b = Monday game
     // Point `file` at the current one; `title` and `url` are optional credits.
     tribute: {
-      file: 'assets/audio/peon-anthemW5a.mp3',
-      title: 'Dallas Dizzyness',
+      // Two songs this week, so the card gets a switcher. One file still
+      // works: use `file` and `title` instead of `tracks`.
+      tracks: [
+        { file: 'assets/audio/peon-anthemW5b1.mp3', title: '', short: 'Track 1' },
+        { file: 'assets/audio/peon-anthemW5b2.mp3', title: '', short: 'Track 2' }
+      ],
       url: '',
       host: 'Suno'
     },
 
-    // ---- the game being picked: Bills at Rams, Mon Oct 12 2026
+    // ---- the game being picked: Seahawks at Broncos, Thu Oct 15 2026
     upcoming: {
-      eventId: '401872994',
-      summaryUrl: 'https://site.api.espn.com/apis/site/v2/sports/football/nfl/summary?event=401872994',
-      label: 'Monday Night Football',
-      navLabel: 'Monday',
-      kickoffISO: '2026-10-13T00:15Z',   // 5:15 PM PT / 8:15 PM ET
+      eventId: '401872995',
+      summaryUrl: 'https://site.api.espn.com/apis/site/v2/sports/football/nfl/summary?event=401872995',
+      label: 'Thursday Night Football',
+      navLabel: 'Thursday',
+      kickoffISO: '2026-10-16T00:15Z',   // 5:15 PM PT / 8:15 PM ET
       kickoffLabel: '5:15 PM PT',
-      network: 'ESPN & ABC',
+      network: 'Prime Video',
       lockMinutesBefore: 120,
       // The pick alternates every game, regardless of who won:
       // DrJ -> MW -> DrJ -> MW. Swap these two each week.
-      picker: 'MW',
-      rival: 'DrJ',                      // who inherits the other team
+      picker: 'DrJ',
+      rival: 'MW',                       // who inherits the other team
       teams: {
-        BUF: { city: 'Buffalo', name: 'Bills', full: 'Buffalo Bills',
-               logo: 'https://a.espncdn.com/i/teamlogos/nfl/500/scoreboard/buf.png' },
-        LAR: { city: 'Los Angeles', name: 'Rams', full: 'Los Angeles Rams',
-               logo: 'https://a.espncdn.com/i/teamlogos/nfl/500/scoreboard/lar.png' }
+        SEA: { city: 'Seattle', name: 'Seahawks', full: 'Seattle Seahawks',
+               logo: 'https://a.espncdn.com/i/teamlogos/nfl/500/scoreboard/sea.png' },
+        DEN: { city: 'Denver', name: 'Broncos', full: 'Denver Broncos',
+               logo: 'https://a.espncdn.com/i/teamlogos/nfl/500/scoreboard/den.png' }
       },
       gameLinks: {
-        gamecast: 'https://www.espn.com/nfl/game/_/gameId/401872994',
-        boxscore: 'https://www.espn.com/nfl/boxscore/_/gameId/401872994',
-        pbp: 'https://www.espn.com/nfl/playbyplay/_/gameId/401872994'
+        gamecast: 'https://www.espn.com/nfl/game/_/gameId/401872995',
+        boxscore: 'https://www.espn.com/nfl/boxscore/_/gameId/401872995',
+        pbp: 'https://www.espn.com/nfl/playbyplay/_/gameId/401872995'
       }
     },
 
@@ -318,6 +321,8 @@
 
   /** The loser owes a song. When one is on file, the middle card plays it. */
   var tributeArmed = false;
+  var tributeTracks = [];
+  var tributeIndex = 0;
 
   function fmtTime(sec) {
     if (!isFinite(sec) || sec < 0) return '--:--';
@@ -326,13 +331,21 @@
     return m + ':' + (s < 10 ? '0' : '') + s;
   }
 
-  /** 'Week 4 \u00b7 Thursday game', read off a name like peon-anthemW4a.mp3. */
+  /** 'Week 5 \u00b7 Monday game', read off a name like peon-anthemW5b1.mp3. */
   function tributeTag(song) {
     if (song.tag) return song.tag;
-    var m = /W(\d+)([ab])/i.exec(song.file || '');
+    var first = (song.tracks && song.tracks.length) ? song.tracks[0].file : song.file;
+    var m = /W(\d+)([ab])/i.exec(first || '');
     if (!m) return '';
     return 'Week ' + m[1] + ' \u00b7 ' +
       (m[2].toLowerCase() === 'a' ? 'Thursday' : 'Monday') + ' game';
+  }
+
+  /** One track or several, normalised to a list. */
+  function trackList(song) {
+    if (song.tracks && song.tracks.length) return song.tracks;
+    if (song.file) return [{ file: song.file, title: song.title || '' }];
+    return [];
   }
 
   function renderTribute(verdict, game) {
@@ -341,15 +354,13 @@
 
     var song = CONFIG.tribute;
     var known = verdict.master !== 'TBD' && verdict.peon !== 'TBD';
-    var ready = !!(song && (song.file || song.url)) && game.state === 'post' && known;
+    tributeTracks = trackList(song);
+    var ready = (tributeTracks.length > 0 || !!song.url) && game.state === 'post' && known;
 
     wrap.hidden = !ready;
     if (!ready) return;
 
     $('tributeTag').textContent = tributeTag(song);
-    $('tributeTitle').textContent = song.title ? '\u201c' + song.title + '\u201d' : '';
-    $('tributeTitle').hidden = !song.title;
-
     $('tributeLabel').textContent = 'Play ' + verdict.peon + '\u2019s tribute';
     $('tributeNote').textContent = verdict.peon + ' lost the crown and paid up. Written for ' +
       verdict.master + '.';
@@ -361,11 +372,55 @@
       link.textContent = 'Listen on ' + (song.host || 'the original') + ' \u2197';
     }
 
-    if (song.file) armTribute(song.file);
+    buildSwitcher();
+    showTrackTitle();
+    if (tributeTracks.length) armTribute();
+  }
+
+  /** A row of pills, only when there is more than one track to choose between. */
+  function buildSwitcher() {
+    var box = $('tributeSwitch');
+    box.innerHTML = '';
+    box.hidden = tributeTracks.length < 2;
+    if (box.hidden) return;
+
+    tributeTracks.forEach(function (track, i) {
+      var b = document.createElement('button');
+      b.type = 'button';
+      b.className = 'tribute__pill' + (i === tributeIndex ? ' is-active' : '');
+      b.textContent = track.short || ('Track ' + (i + 1));
+      b.setAttribute('aria-pressed', String(i === tributeIndex));
+      b.addEventListener('click', function () { selectTrack(i); });
+      box.appendChild(b);
+    });
+  }
+
+  function showTrackTitle() {
+    var track = tributeTracks[tributeIndex];
+    var title = track && track.title ? '\u201c' + track.title + '\u201d' : '';
+    $('tributeTitle').textContent = title;
+    $('tributeTitle').hidden = !title;
+  }
+
+  function selectTrack(i) {
+    if (i === tributeIndex || !tributeTracks[i]) return;
+    var audio = $('tributeAudio');
+    var wasPlaying = !audio.paused;
+
+    tributeIndex = i;
+    audio.src = tributeTracks[i].file;
+    $('tributeSeek').value = 0;
+    $('tributeSeek').style.setProperty('--progress', '0%');
+    $('tributeNow').textContent = '0:00';
+    $('tributeDur').textContent = '--:--';
+
+    buildSwitcher();
+    showTrackTitle();
+    if (wasPlaying) audio.play().catch(function () { /* the button is still there */ });
   }
 
   /** Wire the audio element once; a missing file falls back to the link. */
-  function armTribute(url) {
+  function armTribute() {
     if (tributeArmed) return;
     tributeArmed = true;
 
@@ -377,7 +432,6 @@
     btn.addEventListener('click', function () {
       if (audio.paused) {
         audio.play().catch(function () {
-          // A late rejection must not stomp on a state that has moved on.
           if (audio.paused) $('tributeLabel').textContent = 'Tap play once more';
         });
       } else {
@@ -397,10 +451,17 @@
 
     audio.addEventListener('ended', function () {
       wrap.classList.remove('is-playing');
-      $('tributeLabel').textContent = 'Play it again';
       seek.value = 0;
       seek.style.setProperty('--progress', '0%');
       $('tributeNow').textContent = '0:00';
+
+      // Roll straight into the next track when there is one.
+      if (tributeIndex < tributeTracks.length - 1) {
+        selectTrack(tributeIndex + 1);
+        audio.play().catch(function () { /* leave it to the button */ });
+      } else {
+        $('tributeLabel').textContent = 'Play it again';
+      }
     });
 
     // Playable straight away; duration catches up when the header is read.
@@ -434,7 +495,7 @@
       seek.style.setProperty('--progress', seek.value + '%');
     });
 
-    audio.src = url;
+    audio.src = tributeTracks[tributeIndex].file;
   }
 
   /* ================================================ THE UPCOMING GAME */
@@ -1320,12 +1381,12 @@
 
   // Seeded debate topics. Scores are demo starting values; real votes stack on top.
   var SEED_TAKES = [
-    { id: 'w8a', text: 'The 0-4 team won in Arlington and the whole rivalry flipped on it. Never take the chalk.', side: null, base: 35, agoH: 3, link: CONFIG.upcoming.gameLinks.gamecast, linkLabel: 'Gamecast' },
-    { id: 'w8b', text: 'Buffalo at 3-1 going into SoFi is the best team either of them has had to choose from all season.', side: null, base: 29, agoH: 5, link: 'https://www.espn.com/nfl/team/_/name/buf/buffalo-bills', linkLabel: 'Bills hub' },
-    { id: 'w8c', text: 'The Rams already decided one crown this season. MW should remember which way that went.', side: 'MW', base: 24, agoH: 7, link: 'https://www.espn.com/nfl/team/_/name/lar/los-angeles-rams', linkLabel: 'Rams hub' },
-    { id: 'w8d', text: 'Three crowns, then nothing. That is the most DrJ sequence of events imaginable.', side: 'DrJ', base: 21, agoH: 9, link: CONFIG.upcoming.gameLinks.boxscore, linkLabel: 'Box score' },
-    { id: 'w8e', text: 'After three weeks of recording, MW finally gets to sit and listen for once.', side: 'MW', base: 18, agoH: 11, link: CONFIG.upcoming.gameLinks.pbp, linkLabel: 'Play-by-play' },
-    { id: 'w8f', text: 'Welcome to the Peon seat, John. The acoustics in here are famously good.', side: null, base: 15, agoH: 13, link: 'https://www.nfl.com/standings/', linkLabel: 'Standings' }
+    { id: 'w9a', text: 'Thirty seven to thirty four in overtime. That is not a football game, that is a heart attack with a scoreboard.', side: null, base: 34, agoH: 3, link: 'https://www.espn.com/nfl/game/_/gameId/401872994', linkLabel: 'How it ended' },
+    { id: 'w9b', text: 'Two 3-2 teams at altitude on a Thursday. Denver at home in October is a genuinely horrible draw.', side: null, base: 28, agoH: 5, link: CONFIG.upcoming.gameLinks.gamecast, linkLabel: 'Gamecast' },
+    { id: 'w9c', text: 'Seattle travel better than anyone gives them credit for. DrJ should not dismiss the road team here.', side: 'DrJ', base: 25, agoH: 7, link: 'https://www.espn.com/nfl/team/_/name/sea/seattle-seahawks', linkLabel: 'Seahawks hub' },
+    { id: 'w9d', text: 'Mile High in prime time has broken better teams than these two. Pick carefully.', side: null, base: 21, agoH: 9, link: 'https://www.espn.com/nfl/team/_/name/den/denver-broncos', linkLabel: 'Broncos hub' },
+    { id: 'w9e', text: 'MW has back to back crowns and has gone suspiciously quiet about it.', side: 'MW', base: 18, agoH: 11, link: CONFIG.upcoming.gameLinks.boxscore, linkLabel: 'Box score' },
+    { id: 'w9f', text: 'DrJ released a double single this week. The output is up even if the results are not.', side: 'DrJ', base: 16, agoH: 13, link: CONFIG.upcoming.gameLinks.pbp, linkLabel: 'Play-by-play' }
   ];
 
   var sortMode = 'hot';
