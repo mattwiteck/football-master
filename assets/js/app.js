@@ -36,7 +36,7 @@
       // One song this week. For several, swap `file` for a `tracks` array:
       //   tracks: [{ file: '...', title: '...', short: 'Track 1' }, ...]
       file: 'assets/audio/peon-anthemW6a.mp3',
-      title: '',
+      title: 'Mile High Tizzy',
       // Optional extra line under the note, for anything worth warning about.
       aside: 'Note the silence around the halfway mark. That is not a dropout, ' +
         'that is an artist gathering his voice. Stay seated, he comes back.',
