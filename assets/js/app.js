@@ -38,7 +38,7 @@
       file: 'assets/audio/peon-anthemW6a.mp3',
       title: 'Mile High Tizzy',
       // Optional extra line under the note, for anything worth warning about.
-      aside: 'Note the silence around the halfway mark. That is not a dropout, ' +
+      aside: 'Note the silence around the first half minute mark. That is not a dropout, ' +
         'that is an artist gathering his voice. Stay seated, he comes back.',
       url: '',
       host: 'Suno'
