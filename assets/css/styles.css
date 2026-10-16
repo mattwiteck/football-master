@@ -19,8 +19,8 @@
 
   --mw:            #4b8fd6;   /* MW, on badges and the fan bar */
   --drj:           #e8434f;   /* DrJ, and the error / downvote states */
-  --team-away:     #5fc24b;   /* this week: Seahawks green */
-  --team-home:     #fb6a2a;   /* this week: Broncos orange */
+  --team-away:     #d6a95f;   /* this week: Commanders gold */
+  --team-home:     #e8434f;   /* this week: 49ers red */
   --live:          #35d07f;
 
   --radius:        18px;
@@ -484,6 +484,11 @@ a { color: inherit; }
 .tribute__times {
   display: flex; justify-content: space-between; margin-top: 4px;
   font-size: .66rem; font-variant-numeric: tabular-nums; color: var(--text-faint);
+}
+
+.tribute__aside {
+  margin-top: 7px; font-size: .71rem; line-height: 1.45;
+  color: var(--text-faint); font-style: italic;
 }
 
 .tribute__src {
