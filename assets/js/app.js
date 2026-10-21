@@ -16,15 +16,15 @@
   /* ---------------------------------------------------------------- config */
 
   var CONFIG = {
-    // ---- the game already in the books: Seahawks at Broncos, Thu Oct 15 2026.
-    // DrJ picked Seattle, so MW inherited Denver; Denver won 17-14 in OT.
+    // ---- the game already in the books: Commanders at 49ers, Mon Oct 19 2026.
+    // MW picked San Francisco, so DrJ inherited Washington; SF won 23-17.
     crown: {
-      eventId: '401872995',
-      summaryUrl: 'https://site.api.espn.com/apis/site/v2/sports/football/nfl/summary?event=401872995',
-      label: 'Thursday Night Football',
+      eventId: '401873008',
+      summaryUrl: 'https://site.api.espn.com/apis/site/v2/sports/football/nfl/summary?event=401873008',
+      label: 'Monday Night Football',
       people: {
-        DEN: { who: 'MW', team: 'Denver Broncos' },
-        SEA: { who: 'DrJ', team: 'Seattle Seahawks' }
+        SF: { who: 'MW', team: 'San Francisco 49ers' },
+        WSH: { who: 'DrJ', team: 'Washington Commanders' }
       }
     },
 
@@ -35,39 +35,38 @@
     tribute: {
       // One song this week. For several, swap `file` for a `tracks` array:
       //   tracks: [{ file: '...', title: '...', short: 'Track 1' }, ...]
-      file: 'assets/audio/peon-anthemW6a.mp3',
-      title: 'Mile High Tizzy',
+      file: 'assets/audio/peon-anthemW6b.mp3',
+      title: 'Matt Is Still The Master',
       // Optional extra line under the note, for anything worth warning about.
-      aside: 'Note the silence around the first half minute mark. That is not a dropout, ' +
-        'that is an artist gathering his voice. Stay seated, he comes back.',
+      aside: '',
       url: '',
       host: 'Suno'
     },
 
-    // ---- the game being picked: Commanders at 49ers, Mon Oct 19 2026
+    // ---- the game being picked: Patriots at Bears, Thu Oct 22 2026
     upcoming: {
-      eventId: '401873008',
-      summaryUrl: 'https://site.api.espn.com/apis/site/v2/sports/football/nfl/summary?event=401873008',
-      label: 'Monday Night Football',
-      navLabel: 'Monday',
-      kickoffISO: '2026-10-20T00:15Z',   // 5:15 PM PT / 8:15 PM ET
+      eventId: '401873010',
+      summaryUrl: 'https://site.api.espn.com/apis/site/v2/sports/football/nfl/summary?event=401873010',
+      label: 'Thursday Night Football',
+      navLabel: 'Thursday',
+      kickoffISO: '2026-10-23T00:15Z',   // 5:15 PM PT / 8:15 PM ET
       kickoffLabel: '5:15 PM PT',
-      network: 'ESPN & ABC',
+      network: 'Prime Video',
       lockMinutesBefore: 120,
       // The pick alternates every game, regardless of who won:
       // DrJ -> MW -> DrJ -> MW. Swap these two each week.
-      picker: 'MW',
-      rival: 'DrJ',                      // who inherits the other team
+      picker: 'DrJ',
+      rival: 'MW',                       // who inherits the other team
       teams: {
-        WSH: { city: 'Washington', name: 'Commanders', full: 'Washington Commanders',
-               logo: 'https://a.espncdn.com/i/teamlogos/nfl/500/scoreboard/wsh.png' },
-        SF:  { city: 'San Francisco', name: '49ers', full: 'San Francisco 49ers',
-               logo: 'https://a.espncdn.com/i/teamlogos/nfl/500/scoreboard/sf.png' }
+        NE:  { city: 'New England', name: 'Patriots', full: 'New England Patriots',
+               logo: 'https://a.espncdn.com/i/teamlogos/nfl/500/scoreboard/ne.png' },
+        CHI: { city: 'Chicago', name: 'Bears', full: 'Chicago Bears',
+               logo: 'https://a.espncdn.com/i/teamlogos/nfl/500/scoreboard/chi.png' }
       },
       gameLinks: {
-        gamecast: 'https://www.espn.com/nfl/game/_/gameId/401873008',
-        boxscore: 'https://www.espn.com/nfl/boxscore/_/gameId/401873008',
-        pbp: 'https://www.espn.com/nfl/playbyplay/_/gameId/401873008'
+        gamecast: 'https://www.espn.com/nfl/game/_/gameId/401873010',
+        boxscore: 'https://www.espn.com/nfl/boxscore/_/gameId/401873010',
+        pbp: 'https://www.espn.com/nfl/playbyplay/_/gameId/401873010'
       }
     },
 
@@ -1388,12 +1387,12 @@
 
   // Seeded debate topics. Scores are demo starting values; real votes stack on top.
   var SEED_TAKES = [
-    { id: 'w10a', text: 'Two overtimes in a row deciding the crown. Somebody is going to need a lie down before November.', side: null, base: 33, agoH: 3, link: 'https://www.espn.com/nfl/game/_/gameId/401872995', linkLabel: 'How it ended' },
-    { id: 'w10b', text: 'San Francisco are 5-0 and Washington are 1-3-1. On paper this is not a decision, which is exactly when it goes wrong.', side: null, base: 29, agoH: 5, link: CONFIG.upcoming.gameLinks.gamecast, linkLabel: 'Gamecast' },
-    { id: 'w10c', text: 'An undefeated team at home in October is the safest thing on the board. MW will take it and nobody could blame him.', side: 'MW', base: 24, agoH: 7, link: 'https://www.espn.com/nfl/team/_/name/sf/san-francisco-49ers', linkLabel: '49ers hub' },
-    { id: 'w10d', text: 'A tie on the record already tells you Washington find strange ways to not lose.', side: null, base: 20, agoH: 9, link: 'https://www.espn.com/nfl/team/_/name/wsh/washington-commanders', linkLabel: 'Commanders hub' },
-    { id: 'w10e', text: 'Three crowns in a row for MW. The board has a dynasty problem and it is nobody we expected.', side: 'MW', base: 18, agoH: 11, link: CONFIG.upcoming.gameLinks.boxscore, linkLabel: 'Box score' },
-    { id: 'w10f', text: 'DrJ is now recording faster than he is winning. The discography is the only thing growing.', side: 'DrJ', base: 15, agoH: 13, link: CONFIG.upcoming.gameLinks.pbp, linkLabel: 'Play-by-play' }
+    { id: 'w11a', text: 'Four crowns in a row. At what point does somebody check whether MW is simply better at this.', side: 'MW', base: 34, agoH: 3, link: 'https://www.espn.com/nfl/game/_/gameId/401873008', linkLabel: 'How it ended' },
+    { id: 'w11b', text: 'Two 4-2 teams at Soldier Field in late October. This is a proper game with no obvious wrong answer.', side: null, base: 29, agoH: 5, link: CONFIG.upcoming.gameLinks.gamecast, linkLabel: 'Gamecast' },
+    { id: 'w11c', text: 'Chicago already settled one crown this season and it went badly for the man picking. DrJ has been warned.', side: 'DrJ', base: 25, agoH: 7, link: 'https://www.espn.com/nfl/team/_/name/chi/chicago-bears', linkLabel: 'Bears hub' },
+    { id: 'w11d', text: 'New England at 4-2 are quietly the most awkward opponent left on the schedule.', side: null, base: 21, agoH: 9, link: 'https://www.espn.com/nfl/team/_/name/ne/new-england-patriots', linkLabel: 'Patriots hub' },
+    { id: 'w11e', text: 'The wind off the lake in October decides more of these than anybody admits.', side: null, base: 18, agoH: 11, link: CONFIG.upcoming.gameLinks.pbp, linkLabel: 'Play-by-play' },
+    { id: 'w11f', text: 'DrJ has released more material this month than most working bands. Small mercy, that.', side: 'DrJ', base: 15, agoH: 13, link: CONFIG.upcoming.gameLinks.boxscore, linkLabel: 'Box score' }
   ];
 
   var sortMode = 'hot';
