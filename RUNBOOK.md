@@ -105,7 +105,8 @@ Week numbers are the ones used in the file names. Thursday opens each week.
 | 5b | Bills at Rams, Oct 12 | MW took BUF | BUF 37-34 OT | MW | `W5b1` + `W5b2` |
 | 6a | Seahawks at Broncos, Oct 15 | DrJ took SEA | DEN 17-14 OT | MW | `W6a` "Mile High Tizzy" |
 | 6b | Commanders at 49ers, Oct 19 | MW took SF | SF 23-17 | MW | `W6b` "Matt Is Still The Master" |
-| 7a | Patriots at Bears, Oct 22 | DrJ picks | — | — | — |
+| 7a | Patriots at Bears, Oct 22 | DrJ took CHI | CHI 30-24 | DrJ | `W7a` "Patriots Horror before Halloween" |
+| 7b | Cowboys at Eagles, Oct 26 | MW picks | — | — | — |
 
 The badge on the card reads the week and the day straight off the file name, so
 the file name is the source of truth for what gets displayed.

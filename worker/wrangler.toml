@@ -63,6 +63,12 @@ GAMES = '''{
     "rival": "MW",
     "teams": ["NE", "CHI"],
     "lockAt": "2026-10-22T22:15:00Z"
+  },
+  "401873009": {
+    "picker": "MW",
+    "rival": "DrJ",
+    "teams": ["DAL", "PHI"],
+    "lockAt": "2026-10-26T22:15:00Z"
   }
 }'''
 
