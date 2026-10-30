@@ -107,7 +107,12 @@ Week numbers are the ones used in the file names. Thursday opens each week.
 | 6b | Commanders at 49ers, Oct 19 | MW took SF | SF 23-17 | MW | `W6b` "Matt Is Still The Master" |
 | 7a | Patriots at Bears, Oct 22 | DrJ took CHI | CHI 30-24 | DrJ | `W7a` "Patriots Horror before Halloween" |
 | 7b | Cowboys at Eagles, Oct 26 | MW took PHI | DAL 38-21 | DrJ | `W7b` "John's All Hype" |
-| 8a | Panthers at Packers, Oct 29 | DrJ picks | — | — | — |
+| 8a | Panthers at Packers, Oct 29 | DrJ took GB | GB 27-19 | DrJ | `W8a` "Johnagain Winnkteck" |
+| 8b | Bears at Seahawks, Nov 2 | MW picks | — | — | — |
 
 The badge on the card reads the week and the day straight off the file name, so
 the file name is the source of truth for what gets displayed.
+
+**Watch the clocks.** US daylight saving ended on Nov 1 2026, so a 5:15 PM PT
+kickoff is `01:15Z` the next day from November onward, not `00:15Z`. Take
+`kickoffISO` from the ESPN event date rather than copying last week's.

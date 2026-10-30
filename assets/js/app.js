@@ -16,15 +16,15 @@
   /* ---------------------------------------------------------------- config */
 
   var CONFIG = {
-    // ---- the game already in the books: Cowboys at Eagles, Mon Oct 26 2026.
-    // MW picked Philadelphia, so DrJ inherited Dallas; Dallas won 38-21.
+    // ---- the game already in the books: Panthers at Packers, Thu Oct 29 2026.
+    // DrJ picked Green Bay, so MW inherited Carolina; Green Bay won 27-19.
     crown: {
-      eventId: '401873009',
-      summaryUrl: 'https://site.api.espn.com/apis/site/v2/sports/football/nfl/summary?event=401873009',
-      label: 'Monday Night Football',
+      eventId: '401873023',
+      summaryUrl: 'https://site.api.espn.com/apis/site/v2/sports/football/nfl/summary?event=401873023',
+      label: 'Thursday Night Football',
       people: {
-        DAL: { who: 'DrJ', team: 'Dallas Cowboys' },
-        PHI: { who: 'MW', team: 'Philadelphia Eagles' }
+        GB: { who: 'DrJ', team: 'Green Bay Packers' },
+        CAR: { who: 'MW', team: 'Carolina Panthers' }
       }
     },
 
@@ -35,38 +35,40 @@
     tribute: {
       // One song this week. For several, swap `file` for a `tracks` array:
       //   tracks: [{ file: '...', title: '...', short: 'Track 1' }, ...]
-      file: 'assets/audio/peon-anthemW7b.mp3',
-      title: 'John\u2019s All Hype',
+      file: 'assets/audio/peon-anthemW8a.mp3',
+      title: 'Johnagain Winnkteck',
       // Optional extra line under the note, for anything worth warning about.
       aside: '',
       url: '',
       host: 'Suno'
     },
 
-    // ---- the game being picked: Panthers at Packers, Thu Oct 29 2026
+    // ---- the game being picked: Bears at Seahawks, Mon Nov 2 2026
     upcoming: {
-      eventId: '401873023',
-      summaryUrl: 'https://site.api.espn.com/apis/site/v2/sports/football/nfl/summary?event=401873023',
-      label: 'Thursday Night Football',
-      navLabel: 'Thursday',
-      kickoffISO: '2026-10-30T00:15Z',   // 5:15 PM PT / 8:15 PM ET
+      eventId: '401873036',
+      summaryUrl: 'https://site.api.espn.com/apis/site/v2/sports/football/nfl/summary?event=401873036',
+      label: 'Monday Night Football',
+      navLabel: 'Monday',
+      // Clocks went back on Nov 1, so the same 5:15 PM PT kickoff is an hour
+      // later in UTC than it was through October.
+      kickoffISO: '2026-11-03T01:15Z',   // 5:15 PM PT / 8:15 PM ET
       kickoffLabel: '5:15 PM PT',
-      network: 'Prime Video',
+      network: 'ESPN',
       lockMinutesBefore: 120,
       // The pick alternates every game, regardless of who won:
       // DrJ -> MW -> DrJ -> MW. Swap these two each week.
-      picker: 'DrJ',
-      rival: 'MW',                       // who inherits the other team
+      picker: 'MW',
+      rival: 'DrJ',                      // who inherits the other team
       teams: {
-        CAR: { city: 'Carolina', name: 'Panthers', full: 'Carolina Panthers',
-               logo: 'https://a.espncdn.com/i/teamlogos/nfl/500/scoreboard/car.png' },
-        GB:  { city: 'Green Bay', name: 'Packers', full: 'Green Bay Packers',
-               logo: 'https://a.espncdn.com/i/teamlogos/nfl/500/scoreboard/gb.png' }
+        CHI: { city: 'Chicago', name: 'Bears', full: 'Chicago Bears',
+               logo: 'https://a.espncdn.com/i/teamlogos/nfl/500/scoreboard/chi.png' },
+        SEA: { city: 'Seattle', name: 'Seahawks', full: 'Seattle Seahawks',
+               logo: 'https://a.espncdn.com/i/teamlogos/nfl/500/scoreboard/sea.png' }
       },
       gameLinks: {
-        gamecast: 'https://www.espn.com/nfl/game/_/gameId/401873023',
-        boxscore: 'https://www.espn.com/nfl/boxscore/_/gameId/401873023',
-        pbp: 'https://www.espn.com/nfl/playbyplay/_/gameId/401873023'
+        gamecast: 'https://www.espn.com/nfl/game/_/gameId/401873036',
+        boxscore: 'https://www.espn.com/nfl/boxscore/_/gameId/401873036',
+        pbp: 'https://www.espn.com/nfl/playbyplay/_/gameId/401873036'
       }
     },
 
@@ -1387,12 +1389,12 @@
 
   // Seeded debate topics. Scores are demo starting values; real votes stack on top.
   var SEED_TAKES = [
-    { id: 'w13a', text: 'Thirty eight to twenty one in a division game nobody could call. Dallas picked a fine night to remember how to play.', side: null, base: 32, agoH: 3, link: 'https://www.espn.com/nfl/game/_/gameId/401873009', linkLabel: 'How it ended' },
-    { id: 'w13b', text: 'Lambeau at the end of October is its own argument. The forecast matters more than the records here.', side: null, base: 29, agoH: 5, link: CONFIG.upcoming.gameLinks.gamecast, linkLabel: 'Gamecast' },
-    { id: 'w13c', text: 'Green Bay have already decided one crown this season. DrJ was on the right side of that one.', side: 'DrJ', base: 25, agoH: 7, link: 'https://www.espn.com/nfl/team/_/name/gb/green-bay-packers', linkLabel: 'Packers hub' },
-    { id: 'w13d', text: 'Carolina at 3-3 are the definition of a team nobody has an opinion about. That is usually a warning.', side: null, base: 22, agoH: 9, link: 'https://www.espn.com/nfl/team/_/name/car/carolina-panthers', linkLabel: 'Panthers hub' },
-    { id: 'w13e', text: 'Two crowns running for DrJ and the confidence is already visible from space.', side: 'DrJ', base: 19, agoH: 11, link: CONFIG.upcoming.gameLinks.boxscore, linkLabel: 'Box score' },
-    { id: 'w13f', text: 'Back to back recordings for MW. The catalogue grows whether he wants it to or not.', side: 'MW', base: 16, agoH: 13, link: CONFIG.upcoming.gameLinks.pbp, linkLabel: 'Play-by-play' }
+    { id: 'w14a', text: 'Lambeau delivers for DrJ this time. The same building that cost him a crown in September has now handed him one.', side: 'DrJ', base: 33, agoH: 3, link: 'https://www.espn.com/nfl/game/_/gameId/401873023', linkLabel: 'How it ended' },
+    { id: 'w14b', text: 'Lumen Field is the loudest road trip in the league and Chicago have to go there on a short week off a long flight.', side: null, base: 30, agoH: 5, link: CONFIG.upcoming.gameLinks.gamecast, linkLabel: 'Gamecast' },
+    { id: 'w14c', text: 'Chicago at 5-2 are the better team on paper. Paper has not been much use in this rivalry.', side: 'MW', base: 26, agoH: 7, link: 'https://www.espn.com/nfl/team/_/name/chi/chicago-bears', linkLabel: 'Bears hub' },
+    { id: 'w14d', text: 'Seattle at home in November with the crowd involved is a genuinely horrible draw for anyone.', side: null, base: 22, agoH: 9, link: 'https://www.espn.com/nfl/team/_/name/sea/seattle-seahawks', linkLabel: 'Seahawks hub' },
+    { id: 'w14e', text: 'Three crowns running for DrJ. The board has swung completely and nobody can explain why.', side: 'DrJ', base: 19, agoH: 11, link: CONFIG.upcoming.gameLinks.boxscore, linkLabel: 'Box score' },
+    { id: 'w14f', text: 'Three recordings in a row for MW. At this point the discography is the real scoreboard.', side: 'MW', base: 16, agoH: 13, link: CONFIG.upcoming.gameLinks.pbp, linkLabel: 'Play-by-play' }
   ];
 
   var sortMode = 'hot';
