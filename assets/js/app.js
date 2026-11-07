@@ -16,15 +16,16 @@
   /* ---------------------------------------------------------------- config */
 
   var CONFIG = {
-    // ---- the game already in the books: Bears at Seahawks, Mon Nov 2 2026.
-    // MW picked Seattle, so DrJ inherited Chicago; Chicago won 34-17.
+    // ---- the game already in the books: Jaguars at Ravens, Thu Nov 5 2026.
+    // DrJ picked Baltimore, so MW inherited Jacksonville; the Jaguars won
+    // 33-10 and the crown came back to MW after four straight for DrJ.
     crown: {
-      eventId: '401873036',
-      summaryUrl: 'https://site.api.espn.com/apis/site/v2/sports/football/nfl/summary?event=401873036',
-      label: 'Monday Night Football',
+      eventId: '401873037',
+      summaryUrl: 'https://site.api.espn.com/apis/site/v2/sports/football/nfl/summary?event=401873037',
+      label: 'Thursday Night Football',
       people: {
-        CHI: { who: 'DrJ', team: 'Chicago Bears' },
-        SEA: { who: 'MW', team: 'Seattle Seahawks' }
+        JAX: { who: 'MW', team: 'Jacksonville Jaguars' },
+        BAL: { who: 'DrJ', team: 'Baltimore Ravens' }
       }
     },
 
@@ -35,39 +36,39 @@
     tribute: {
       // One song this week. For several, swap `file` for a `tracks` array:
       //   tracks: [{ file: '...', title: '...', short: 'Track 1' }, ...]
-      file: 'assets/audio/peon-anthemW8b.mp3',
-      title: 'Matthew Suave',
+      file: 'assets/audio/peon-anthemW9a.mp3',
+      title: 'Return of Matt\u2019s Crown',
       // Optional extra line under the note, for anything worth warning about.
       aside: '',
       url: '',
       host: 'Suno'
     },
 
-    // ---- the game being picked: Jaguars at Ravens, Thu Nov 5 2026
+    // ---- the game being picked: Bills at Vikings, Mon Nov 9 2026
     upcoming: {
-      eventId: '401873037',
-      summaryUrl: 'https://site.api.espn.com/apis/site/v2/sports/football/nfl/summary?event=401873037',
-      label: 'Thursday Night Football',
-      navLabel: 'Thursday',
+      eventId: '401873051',
+      summaryUrl: 'https://site.api.espn.com/apis/site/v2/sports/football/nfl/summary?event=401873051',
+      label: 'Monday Night Football',
+      navLabel: 'Monday',
       // Clocks went back on Nov 1: 5:15 PM PT is 01:15Z the following day.
-      kickoffISO: '2026-11-06T01:15Z',   // 5:15 PM PT / 8:15 PM ET
+      kickoffISO: '2026-11-10T01:15Z',   // 5:15 PM PT / 8:15 PM ET
       kickoffLabel: '5:15 PM PT',
-      network: 'Prime Video',
+      network: 'ESPN & ABC',
       lockMinutesBefore: 120,
       // The pick alternates every game, regardless of who won:
       // DrJ -> MW -> DrJ -> MW. Swap these two each week.
-      picker: 'DrJ',
-      rival: 'MW',                       // who inherits the other team
+      picker: 'MW',
+      rival: 'DrJ',                      // who inherits the other team
       teams: {
-        JAX: { city: 'Jacksonville', name: 'Jaguars', full: 'Jacksonville Jaguars',
-               logo: 'https://a.espncdn.com/i/teamlogos/nfl/500/scoreboard/jax.png' },
-        BAL: { city: 'Baltimore', name: 'Ravens', full: 'Baltimore Ravens',
-               logo: 'https://a.espncdn.com/i/teamlogos/nfl/500/scoreboard/bal.png' }
+        BUF: { city: 'Buffalo', name: 'Bills', full: 'Buffalo Bills',
+               logo: 'https://a.espncdn.com/i/teamlogos/nfl/500/scoreboard/buf.png' },
+        MIN: { city: 'Minnesota', name: 'Vikings', full: 'Minnesota Vikings',
+               logo: 'https://a.espncdn.com/i/teamlogos/nfl/500/scoreboard/min.png' }
       },
       gameLinks: {
-        gamecast: 'https://www.espn.com/nfl/game/_/gameId/401873037',
-        boxscore: 'https://www.espn.com/nfl/boxscore/_/gameId/401873037',
-        pbp: 'https://www.espn.com/nfl/playbyplay/_/gameId/401873037'
+        gamecast: 'https://www.espn.com/nfl/game/_/gameId/401873051',
+        boxscore: 'https://www.espn.com/nfl/boxscore/_/gameId/401873051',
+        pbp: 'https://www.espn.com/nfl/playbyplay/_/gameId/401873051'
       }
     },
 
@@ -1388,12 +1389,12 @@
 
   // Seeded debate topics. Scores are demo starting values; real votes stack on top.
   var SEED_TAKES = [
-    { id: 'w15a', text: 'Chicago went into the loudest building in the league and won by seventeen. So much for the home crowd.', side: null, base: 33, agoH: 3, link: 'https://www.espn.com/nfl/game/_/gameId/401873036', linkLabel: 'How it ended' },
-    { id: 'w15b', text: 'Jacksonville at 5-2 are the quiet best record on the board, and nobody outside Florida has noticed.', side: null, base: 30, agoH: 5, link: 'https://www.espn.com/nfl/team/_/name/jax/jacksonville-jaguars', linkLabel: 'Jaguars hub' },
-    { id: 'w15c', text: 'Baltimore at 4-4 are either about to turn their season around or end it. No middle ground in that building.', side: 'DrJ', base: 26, agoH: 7, link: 'https://www.espn.com/nfl/team/_/name/bal/baltimore-ravens', linkLabel: 'Ravens hub' },
-    { id: 'w15d', text: 'A road team with the better record against a home team with everything to lose. Genuinely impossible call.', side: null, base: 22, agoH: 9, link: CONFIG.upcoming.gameLinks.gamecast, linkLabel: 'Gamecast' },
-    { id: 'w15e', text: 'Four crowns running for DrJ. Whatever he changed in October, it is still working.', side: 'DrJ', base: 20, agoH: 11, link: CONFIG.upcoming.gameLinks.boxscore, linkLabel: 'Box score' },
-    { id: 'w15f', text: 'MW has now recorded four weeks straight. Somebody get the man a producer and a day off.', side: 'MW', base: 17, agoH: 13, link: CONFIG.upcoming.gameLinks.pbp, linkLabel: 'Play-by-play' }
+    { id: 'w16a', text: 'Thirty three to ten. The quiet 5-2 team walked into Baltimore and took the building apart.', side: null, base: 34, agoH: 3, link: 'https://www.espn.com/nfl/game/_/gameId/401873037', linkLabel: 'How it ended' },
+    { id: 'w16b', text: 'Two 6-1 teams on a Monday night in November. This is the best game the board has served up all season.', side: null, base: 31, agoH: 5, link: CONFIG.upcoming.gameLinks.gamecast, linkLabel: 'Gamecast' },
+    { id: 'w16c', text: 'Buffalo have already handed MW a crown once this year. He remembers, and so does everyone else.', side: 'MW', base: 27, agoH: 7, link: 'https://www.espn.com/nfl/team/_/name/buf/buffalo-bills', linkLabel: 'Bills hub' },
+    { id: 'w16d', text: 'Minnesota indoors at 6-1 is about as hostile a draw as exists. There is no soft option here.', side: null, base: 23, agoH: 9, link: 'https://www.espn.com/nfl/team/_/name/min/minnesota-vikings', linkLabel: 'Vikings hub' },
+    { id: 'w16e', text: 'Four crowns and then one bad Thursday. The run is over and DrJ is back in the booth.', side: 'DrJ', base: 20, agoH: 11, link: CONFIG.upcoming.gameLinks.boxscore, linkLabel: 'Box score' },
+    { id: 'w16f', text: 'The crown has now changed hands six times. Nobody holds this thing for long.', side: null, base: 17, agoH: 13, link: CONFIG.upcoming.gameLinks.pbp, linkLabel: 'Play-by-play' }
   ];
 
   var sortMode = 'hot';
