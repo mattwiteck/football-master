@@ -67,6 +67,37 @@ The page installs like an app on iOS. In Safari, tap **Share → Add to Home Scr
 
 Android/Chrome gets a normal bookmark; add a `manifest.webmanifest` if you want an installable PWA there too.
 
+## Logins and passwords
+
+**No credentials live in this repo.** `CONFIG.users` in `assets/js/app.js` is deliberately empty
+(`users: {}`); it is only a fallback for the offline mode nobody runs. The real logins are held in the sync
+Worker's `USERS` secret on Cloudflare.
+
+The secret is one line of JSON in this shape:
+
+```json
+{"jjw008":{"pass":"...","who":"DrJ"},"matt":{"pass":"...","who":"MW"}}
+```
+
+| | |
+| --- | --- |
+| **Usernames** | `jjw008` is DrJ, `matt` is MW. The `who` value is what the app matches against `picker`, so it must stay exactly `DrJ` / `MW`. |
+| **Passwords** | Only in the Cloudflare secret. They are not in the repo, not in git history, and not in the browser. |
+| **Where** | Cloudflare dashboard &rarr; Workers & Pages &rarr; `football-master-sync` &rarr; Settings &rarr; Variables and Secrets &rarr; `USERS`. |
+| **Or by CLI** | `npx wrangler@4 secret put USERS` from `worker/`. |
+
+Two things to know before editing it:
+
+- **Secrets are write-only.** Cloudflare will let you replace the value but never shows you the current one.
+  That means you must retype **both** accounts every time, or whichever one you leave out is wiped.
+- **Changes take effect on Deploy**, immediately, with no push to this repo needed.
+
+`TOKEN_SECRET`, the other secret, signs the session tokens handed out at login. Those tokens last 30 days;
+when one expires the site signs you out and asks you to log in again. Rotating `TOKEN_SECRET` invalidates
+every existing session at once, which is the way to force everyone to sign in fresh.
+
+See [worker/README.md](worker/README.md) for the rest of the service.
+
 ## The Pick: how it works
 
 `CONFIG.upcoming.picker` names whose turn it is (currently `DrJ`); `CONFIG.upcoming.rival` gets the other
