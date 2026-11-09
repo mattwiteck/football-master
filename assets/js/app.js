@@ -710,6 +710,11 @@
     }).then(function (res) {
       return res.json().catch(function () { return {}; }).then(function (data) {
         if (!res.ok) {
+          // A rejected token is a dead token. Clear it so the page stops
+          // claiming to be signed in while every write fails behind the scenes.
+          if (res.status === 401 && path !== '/login' && path !== '/register') {
+            DB.logout();
+          }
           var err = new Error(data.error || ('http_' + res.status));
           err.status = res.status;
           err.data = data;
@@ -740,6 +745,12 @@
     // A token from a previous deploy of the Worker is no use offline, and a
     // bare offline session is no use online.
     if (DB.online && DB.session && !DB.session.token) DB.session = null;
+    // Tokens last 30 days. An expired one would sit there looking signed in
+    // while every write came back 401, so retire it up front.
+    if (DB.session && DB.session.exp && Date.now() > DB.session.exp) {
+      DB.logout();
+      DB.sessionExpired = true;
+    }
     return DB.session;
   };
 
@@ -780,7 +791,7 @@
     }
     return apiCall('/login', { method: 'POST', body: { user: user, pass: pass } })
       .then(function (data) {
-        DB.session = { who: data.who, token: data.token, at: Date.now() };
+        DB.session = { who: data.who, token: data.token, at: Date.now(), exp: data.exp || 0 };
         save(STORE.session, DB.session);
         return DB.session;
       })
@@ -1124,6 +1135,12 @@
     if (!s) {
       setStage('auth');
       showPanels('authPanel');
+      if (DB.sessionExpired) {
+        var err = $('authError');
+        err.hidden = false;
+        err.textContent = 'Your sign-in expired. Sign in again to file a pick.';
+        DB.sessionExpired = false;
+      }
       return;
     }
 
@@ -1150,6 +1167,7 @@
     $('paperSig').textContent = marked && isPicker ? s.who : '';
 
     $('sealBtn').disabled = !isPicker || !marked;
+    $('ballotHint').classList.remove('pick__hint--error');
     $('ballotHint').textContent = !isPicker
       ? 'Only ' + CONFIG.upcoming.picker + ' can file a ballot this week.'
       : (marked ? 'Signed. Send it down the tube.' : 'Mark a team to sign the ballot.');
@@ -1230,17 +1248,43 @@
       written.then(function (result) {
         marked = null;
         renderLedger();
-        renderPick();
-        if (result !== true) {
-          var why = (result && result.message) || 'write_failed';
-          var note = why === 'ballot_sealed' ? 'The server sealed the ballot before that landed.'
-            : why === 'not_your_turn' ? 'The server says it is not your turn this week.'
-            : why === 'unauthorized' ? 'Sign in again to file this pick.'
-            : 'The pick could not be saved to the sync service, so it is not shared yet.';
-          $('revealStamp').textContent = note;
+
+        if (result === true) {
+          renderPick();
+          return;
         }
+
+        // The write failed. renderPick is about to drop us back on the ballot,
+        // so the message has to land there, not in the hidden reveal panel.
+        var why = (result && result.message) || 'write_failed';
+        var note = why === 'ballot_sealed'
+            ? 'The ballot sealed before that landed. The pick was not saved.'
+          : why === 'not_your_turn'
+            ? 'The server says it is not your turn this week. The pick was not saved.'
+          : why === 'unauthorized'
+            ? 'Your sign-in expired, so the pick was not saved. Sign in again and re-send it.'
+          : 'The pick could not be saved. Check your connection and try again.';
+
+        renderIdentity();
+        showPickError(note);
       });
     });
+  }
+
+  /** Put a failure in front of whoever just pressed the button. */
+  function showPickError(message) {
+    var hint = $('ballotHint');
+    if (hint && !$('ballotPanel').hidden) {
+      hint.textContent = message;
+      hint.classList.add('pick__hint--error');
+      return;
+    }
+    // Signed out by the failure: the auth panel is showing instead.
+    var err = $('authError');
+    if (err) {
+      err.hidden = false;
+      err.textContent = message;
+    }
   }
 
   /* ---- ledger ---- */

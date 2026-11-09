@@ -883,6 +883,16 @@ a { color: inherit; }
   font-size: clamp(1.3rem, 2.6vw, 1.7rem); text-transform: uppercase; margin-top: 8px;
 }
 .pick__hint { font-size: .84rem; color: var(--text-faint); margin-top: 6px; }
+.pick__hint--error {
+  color: #ffb4b9;
+  background: rgba(232, 67, 79, .1);
+  border: 1px solid rgba(232, 67, 79, .35);
+  border-radius: var(--radius-sm);
+  padding: 10px 14px;
+  max-width: 460px;
+  margin-inline: auto;
+}
+
 .pick__send { margin-top: 18px; }
 
 .pick__spectator {
