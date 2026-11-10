@@ -16,16 +16,15 @@
   /* ---------------------------------------------------------------- config */
 
   var CONFIG = {
-    // ---- the game already in the books: Jaguars at Ravens, Thu Nov 5 2026.
-    // DrJ picked Baltimore, so MW inherited Jacksonville; the Jaguars won
-    // 33-10 and the crown came back to MW after four straight for DrJ.
+    // ---- the game already in the books: Bills at Vikings, Mon Nov 9 2026.
+    // MW picked Buffalo, so DrJ inherited Minnesota; Buffalo won 23-6.
     crown: {
-      eventId: '401873037',
-      summaryUrl: 'https://site.api.espn.com/apis/site/v2/sports/football/nfl/summary?event=401873037',
-      label: 'Thursday Night Football',
+      eventId: '401873051',
+      summaryUrl: 'https://site.api.espn.com/apis/site/v2/sports/football/nfl/summary?event=401873051',
+      label: 'Monday Night Football',
       people: {
-        JAX: { who: 'MW', team: 'Jacksonville Jaguars' },
-        BAL: { who: 'DrJ', team: 'Baltimore Ravens' }
+        BUF: { who: 'MW', team: 'Buffalo Bills' },
+        MIN: { who: 'DrJ', team: 'Minnesota Vikings' }
       }
     },
 
@@ -36,39 +35,39 @@
     tribute: {
       // One song this week. For several, swap `file` for a `tracks` array:
       //   tracks: [{ file: '...', title: '...', short: 'Track 1' }, ...]
-      file: 'assets/audio/peon-anthemW9a.mp3',
-      title: 'Return of Matt\u2019s Crown',
+      file: 'assets/audio/peon-anthemW9b.mp3',
+      title: 'Hail To The Master',
       // Optional extra line under the note, for anything worth warning about.
       aside: '',
       url: '',
       host: 'Suno'
     },
 
-    // ---- the game being picked: Bills at Vikings, Mon Nov 9 2026
+    // ---- the game being picked: Commanders at Giants, Thu Nov 12 2026
     upcoming: {
-      eventId: '401873051',
-      summaryUrl: 'https://site.api.espn.com/apis/site/v2/sports/football/nfl/summary?event=401873051',
-      label: 'Monday Night Football',
-      navLabel: 'Monday',
+      eventId: '401873052',
+      summaryUrl: 'https://site.api.espn.com/apis/site/v2/sports/football/nfl/summary?event=401873052',
+      label: 'Thursday Night Football',
+      navLabel: 'Thursday',
       // Clocks went back on Nov 1: 5:15 PM PT is 01:15Z the following day.
-      kickoffISO: '2026-11-10T01:15Z',   // 5:15 PM PT / 8:15 PM ET
+      kickoffISO: '2026-11-13T01:15Z',   // 5:15 PM PT / 8:15 PM ET
       kickoffLabel: '5:15 PM PT',
-      network: 'ESPN & ABC',
+      network: 'Prime Video',
       lockMinutesBefore: 120,
       // The pick alternates every game, regardless of who won:
       // DrJ -> MW -> DrJ -> MW. Swap these two each week.
-      picker: 'MW',
-      rival: 'DrJ',                      // who inherits the other team
+      picker: 'DrJ',
+      rival: 'MW',                       // who inherits the other team
       teams: {
-        BUF: { city: 'Buffalo', name: 'Bills', full: 'Buffalo Bills',
-               logo: 'https://a.espncdn.com/i/teamlogos/nfl/500/scoreboard/buf.png' },
-        MIN: { city: 'Minnesota', name: 'Vikings', full: 'Minnesota Vikings',
-               logo: 'https://a.espncdn.com/i/teamlogos/nfl/500/scoreboard/min.png' }
+        WSH: { city: 'Washington', name: 'Commanders', full: 'Washington Commanders',
+               logo: 'https://a.espncdn.com/i/teamlogos/nfl/500/scoreboard/wsh.png' },
+        NYG: { city: 'New York', name: 'Giants', full: 'New York Giants',
+               logo: 'https://a.espncdn.com/i/teamlogos/nfl/500/scoreboard/nyg.png' }
       },
       gameLinks: {
-        gamecast: 'https://www.espn.com/nfl/game/_/gameId/401873051',
-        boxscore: 'https://www.espn.com/nfl/boxscore/_/gameId/401873051',
-        pbp: 'https://www.espn.com/nfl/playbyplay/_/gameId/401873051'
+        gamecast: 'https://www.espn.com/nfl/game/_/gameId/401873052',
+        boxscore: 'https://www.espn.com/nfl/boxscore/_/gameId/401873052',
+        pbp: 'https://www.espn.com/nfl/playbyplay/_/gameId/401873052'
       }
     },
 
@@ -1433,12 +1432,12 @@
 
   // Seeded debate topics. Scores are demo starting values; real votes stack on top.
   var SEED_TAKES = [
-    { id: 'w16a', text: 'Thirty three to ten. The quiet 5-2 team walked into Baltimore and took the building apart.', side: null, base: 34, agoH: 3, link: 'https://www.espn.com/nfl/game/_/gameId/401873037', linkLabel: 'How it ended' },
-    { id: 'w16b', text: 'Two 6-1 teams on a Monday night in November. This is the best game the board has served up all season.', side: null, base: 31, agoH: 5, link: CONFIG.upcoming.gameLinks.gamecast, linkLabel: 'Gamecast' },
-    { id: 'w16c', text: 'Buffalo have already handed MW a crown once this year. He remembers, and so does everyone else.', side: 'MW', base: 27, agoH: 7, link: 'https://www.espn.com/nfl/team/_/name/buf/buffalo-bills', linkLabel: 'Bills hub' },
-    { id: 'w16d', text: 'Minnesota indoors at 6-1 is about as hostile a draw as exists. There is no soft option here.', side: null, base: 23, agoH: 9, link: 'https://www.espn.com/nfl/team/_/name/min/minnesota-vikings', linkLabel: 'Vikings hub' },
-    { id: 'w16e', text: 'Four crowns and then one bad Thursday. The run is over and DrJ is back in the booth.', side: 'DrJ', base: 20, agoH: 11, link: CONFIG.upcoming.gameLinks.boxscore, linkLabel: 'Box score' },
-    { id: 'w16f', text: 'The crown has now changed hands six times. Nobody holds this thing for long.', side: null, base: 17, agoH: 13, link: CONFIG.upcoming.gameLinks.pbp, linkLabel: 'Play-by-play' }
+    { id: 'w17a', text: 'Twenty three to six. The best game on the schedule turned into a shutout with a field goal attached.', side: null, base: 33, agoH: 3, link: 'https://www.espn.com/nfl/game/_/gameId/401873051', linkLabel: 'How it ended' },
+    { id: 'w17b', text: 'A 2-5-1 team at a 5-2-1 team, and both of those ties tell you these two find weird ways to not win.', side: null, base: 29, agoH: 5, link: CONFIG.upcoming.gameLinks.gamecast, linkLabel: 'Gamecast' },
+    { id: 'w17c', text: 'The Giants decided the very first crown of this rivalry back in September. DrJ was on the wrong end of it.', side: 'DrJ', base: 26, agoH: 7, link: 'https://www.espn.com/nfl/team/_/name/nyg/new-york-giants', linkLabel: 'Giants hub' },
+    { id: 'w17d', text: 'Washington have already cost somebody a crown this season. The record is a trap, not a tip.', side: null, base: 22, agoH: 9, link: 'https://www.espn.com/nfl/team/_/name/wsh/washington-commanders', linkLabel: 'Commanders hub' },
+    { id: 'w17e', text: 'Back to back crowns for MW and the Buffalo pick looks smarter every time you read the box score.', side: 'MW', base: 19, agoH: 11, link: CONFIG.upcoming.gameLinks.boxscore, linkLabel: 'Box score' },
+    { id: 'w17f', text: 'A division game in November between two teams going nowhere is exactly where this thing gets decided.', side: null, base: 16, agoH: 13, link: CONFIG.upcoming.gameLinks.pbp, linkLabel: 'Play-by-play' }
   ];
 
   var sortMode = 'hot';
