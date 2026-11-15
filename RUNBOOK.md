@@ -90,6 +90,21 @@ The card works the rest out by itself: who sings, who it is for, and the
 card shows the player without one rather than inventing a name — worth asking
 for it.
 
+### When there is no song
+
+Some weeks the peon has not handed anything in. Leave `file` empty, drop the
+`title`, and set `tag` by hand — the week and day are normally read off the
+file name, and here there is no file name to read:
+
+```js
+tribute: { file: '', title: '', tag: 'Week 10 \u00b7 Thursday game',
+           aside: '', url: '', host: '' }
+```
+
+The card still appears under the verdict, but as an IOU: no player, no seek
+bar, just a line naming who owes whom. When the mp3 turns up later, set `file`
+and `title`, delete the `tag`, and the player comes back on its own.
+
 ## Standing history
 
 Week numbers are the ones used in the file names. Thursday opens each week.
@@ -111,7 +126,8 @@ Week numbers are the ones used in the file names. Thursday opens each week.
 | 8b | Bears at Seahawks, Nov 2 | MW took SEA | CHI 34-17 | DrJ | `W8b` "Matthew Suave" |
 | 9a | Jaguars at Ravens, Nov 5 | DrJ took BAL | JAX 33-10 | MW | `W9a` "Return of Matt's Crown" |
 | 9b | Bills at Vikings, Nov 9 | MW took BUF | BUF 23-6 | MW | `W9b` "Hail To The Master" |
-| 10a | Commanders at Giants, Nov 12 | DrJ picks | — | — | — |
+| 10a | Commanders at Giants, Nov 12 | DrJ took NYG | WSH 24-21 | MW | none handed in |
+| 10b | Chargers at Ravens, Nov 16 | MW picks | — | — | — |
 
 The badge on the card reads the week and the day straight off the file name, so
 the file name is the source of truth for what gets displayed.

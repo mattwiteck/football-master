@@ -16,15 +16,15 @@
   /* ---------------------------------------------------------------- config */
 
   var CONFIG = {
-    // ---- the game already in the books: Bills at Vikings, Mon Nov 9 2026.
-    // MW picked Buffalo, so DrJ inherited Minnesota; Buffalo won 23-6.
+    // ---- the game already in the books: Commanders at Giants, Thu Nov 12 2026.
+    // DrJ picked the Giants, so MW inherited Washington; Washington won 24-21.
     crown: {
-      eventId: '401873051',
-      summaryUrl: 'https://site.api.espn.com/apis/site/v2/sports/football/nfl/summary?event=401873051',
-      label: 'Monday Night Football',
+      eventId: '401873052',
+      summaryUrl: 'https://site.api.espn.com/apis/site/v2/sports/football/nfl/summary?event=401873052',
+      label: 'Thursday Night Football',
       people: {
-        BUF: { who: 'MW', team: 'Buffalo Bills' },
-        MIN: { who: 'DrJ', team: 'Minnesota Vikings' }
+        WSH: { who: 'MW', team: 'Washington Commanders' },
+        NYG: { who: 'DrJ', team: 'New York Giants' }
       }
     },
 
@@ -32,42 +32,47 @@
     // One song per game, named for the week it settles:
     //   peon-anthemW<week><a|b>.mp3   a = Thursday game, b = Monday game
     // Point `file` at the current one; `title` and `url` are optional credits.
+    // No song on file for this one yet. Leave `file` empty and the card says
+    // the tribute is owed instead of showing a player with nothing in it.
+    // When the mp3 lands, set `file` (and `title`) and drop the `tag`, which
+    // is only here because there is no file name to read the week off.
     tribute: {
       // One song this week. For several, swap `file` for a `tracks` array:
       //   tracks: [{ file: '...', title: '...', short: 'Track 1' }, ...]
-      file: 'assets/audio/peon-anthemW9b.mp3',
-      title: 'Hail To The Master',
+      file: '',
+      title: '',
+      tag: 'Week 10 \u00b7 Thursday game',
       // Optional extra line under the note, for anything worth warning about.
       aside: '',
       url: '',
       host: 'Suno'
     },
 
-    // ---- the game being picked: Commanders at Giants, Thu Nov 12 2026
+    // ---- the game being picked: Chargers at Ravens, Mon Nov 16 2026
     upcoming: {
-      eventId: '401873052',
-      summaryUrl: 'https://site.api.espn.com/apis/site/v2/sports/football/nfl/summary?event=401873052',
-      label: 'Thursday Night Football',
-      navLabel: 'Thursday',
+      eventId: '401873065',
+      summaryUrl: 'https://site.api.espn.com/apis/site/v2/sports/football/nfl/summary?event=401873065',
+      label: 'Monday Night Football',
+      navLabel: 'Monday',
       // Clocks went back on Nov 1: 5:15 PM PT is 01:15Z the following day.
-      kickoffISO: '2026-11-13T01:15Z',   // 5:15 PM PT / 8:15 PM ET
+      kickoffISO: '2026-11-17T01:15Z',   // 5:15 PM PT / 8:15 PM ET
       kickoffLabel: '5:15 PM PT',
-      network: 'Prime Video',
+      network: 'ESPN',
       lockMinutesBefore: 120,
       // The pick alternates every game, regardless of who won:
       // DrJ -> MW -> DrJ -> MW. Swap these two each week.
-      picker: 'DrJ',
-      rival: 'MW',                       // who inherits the other team
+      picker: 'MW',
+      rival: 'DrJ',                      // who inherits the other team
       teams: {
-        WSH: { city: 'Washington', name: 'Commanders', full: 'Washington Commanders',
-               logo: 'https://a.espncdn.com/i/teamlogos/nfl/500/scoreboard/wsh.png' },
-        NYG: { city: 'New York', name: 'Giants', full: 'New York Giants',
-               logo: 'https://a.espncdn.com/i/teamlogos/nfl/500/scoreboard/nyg.png' }
+        LAC: { city: 'Los Angeles', name: 'Chargers', full: 'Los Angeles Chargers',
+               logo: 'https://a.espncdn.com/i/teamlogos/nfl/500/scoreboard/lac.png' },
+        BAL: { city: 'Baltimore', name: 'Ravens', full: 'Baltimore Ravens',
+               logo: 'https://a.espncdn.com/i/teamlogos/nfl/500/scoreboard/bal.png' }
       },
       gameLinks: {
-        gamecast: 'https://www.espn.com/nfl/game/_/gameId/401873052',
-        boxscore: 'https://www.espn.com/nfl/boxscore/_/gameId/401873052',
-        pbp: 'https://www.espn.com/nfl/playbyplay/_/gameId/401873052'
+        gamecast: 'https://www.espn.com/nfl/game/_/gameId/401873065',
+        boxscore: 'https://www.espn.com/nfl/boxscore/_/gameId/401873065',
+        pbp: 'https://www.espn.com/nfl/playbyplay/_/gameId/401873065'
       }
     },
 
@@ -356,21 +361,38 @@
     var song = CONFIG.tribute;
     var known = verdict.master !== 'TBD' && verdict.peon !== 'TBD';
     tributeTracks = trackList(song);
-    var ready = (tributeTracks.length > 0 || !!song.url) && game.state === 'post' && known;
+    var hasSong = tributeTracks.length > 0 || !!song.url;
+    var settled = game.state === 'post' && known;
 
-    wrap.hidden = !ready;
-    if (!ready) return;
+    // The card appears as soon as the crown is settled. Whether it holds a
+    // player or just an IOU depends on whether a song has been handed in.
+    wrap.hidden = !settled;
+    if (!settled) return;
+    wrap.setAttribute('data-state', hasSong ? 'ready' : 'owed');
 
     $('tributeTag').textContent = tributeTag(song);
-    $('tributeLabel').textContent = 'Play ' + verdict.peon + '\u2019s tribute';
-    $('tributeNote').textContent = verdict.peon + ' lost the crown and paid up. Written for ' +
-      verdict.master + '.';
 
     var aside = $('tributeAside');
     if (aside) {
       aside.textContent = song.aside || '';
       aside.hidden = !song.aside;
     }
+
+    if (!hasSong) {
+      $('tributeTitle').hidden = true;
+      $('tributePlay').hidden = true;
+      $('tributeSwitch').hidden = true;
+      $('tributeTrack').hidden = true;
+      $('tributeLink').hidden = true;
+      $('tributeNote').textContent = verdict.peon + ' owes ' + verdict.master +
+        ' a tribute. Nothing handed in yet \u2014 the studio is still quiet.';
+      return;
+    }
+
+    $('tributePlay').hidden = false;
+    $('tributeLabel').textContent = 'Play ' + verdict.peon + '\u2019s tribute';
+    $('tributeNote').textContent = verdict.peon + ' lost the crown and paid up. Written for ' +
+      verdict.master + '.';
 
     var link = $('tributeLink');
     link.hidden = !song.url;
@@ -1432,12 +1454,12 @@
 
   // Seeded debate topics. Scores are demo starting values; real votes stack on top.
   var SEED_TAKES = [
-    { id: 'w17a', text: 'Twenty three to six. The best game on the schedule turned into a shutout with a field goal attached.', side: null, base: 33, agoH: 3, link: 'https://www.espn.com/nfl/game/_/gameId/401873051', linkLabel: 'How it ended' },
-    { id: 'w17b', text: 'A 2-5-1 team at a 5-2-1 team, and both of those ties tell you these two find weird ways to not win.', side: null, base: 29, agoH: 5, link: CONFIG.upcoming.gameLinks.gamecast, linkLabel: 'Gamecast' },
-    { id: 'w17c', text: 'The Giants decided the very first crown of this rivalry back in September. DrJ was on the wrong end of it.', side: 'DrJ', base: 26, agoH: 7, link: 'https://www.espn.com/nfl/team/_/name/nyg/new-york-giants', linkLabel: 'Giants hub' },
-    { id: 'w17d', text: 'Washington have already cost somebody a crown this season. The record is a trap, not a tip.', side: null, base: 22, agoH: 9, link: 'https://www.espn.com/nfl/team/_/name/wsh/washington-commanders', linkLabel: 'Commanders hub' },
-    { id: 'w17e', text: 'Back to back crowns for MW and the Buffalo pick looks smarter every time you read the box score.', side: 'MW', base: 19, agoH: 11, link: CONFIG.upcoming.gameLinks.boxscore, linkLabel: 'Box score' },
-    { id: 'w17f', text: 'A division game in November between two teams going nowhere is exactly where this thing gets decided.', side: null, base: 16, agoH: 13, link: CONFIG.upcoming.gameLinks.pbp, linkLabel: 'Play-by-play' }
+    { id: 'w18a', text: 'Three points the other way and DrJ is wearing the crown. The Giants had it and handed it straight back.', side: null, base: 34, agoH: 3, link: 'https://www.espn.com/nfl/game/_/gameId/401873052', linkLabel: 'How it ended' },
+    { id: 'w18b', text: 'An 0-8 team at a 4-5 team on a Monday night. Somebody has to win this one, which is the whole problem.', side: null, base: 30, agoH: 5, link: CONFIG.upcoming.gameLinks.gamecast, linkLabel: 'Gamecast' },
+    { id: 'w18c', text: 'Nobody goes 0-9 without one night where it all comes together. Picking against that is how you lose a crown.', side: 'DrJ', base: 27, agoH: 7, link: 'https://www.espn.com/nfl/team/_/name/lac/los-angeles-chargers', linkLabel: 'Chargers hub' },
+    { id: 'w18d', text: 'Baltimore are 4-5 and still the best team in this building by a distance. Take the safe one and sleep fine.', side: null, base: 23, agoH: 9, link: 'https://www.espn.com/nfl/team/_/name/bal/baltimore-ravens', linkLabel: 'Ravens hub' },
+    { id: 'w18e', text: 'Three straight crowns for MW, and this time he did it without even making the pick. That has to sting.', side: 'MW', base: 20, agoH: 11, link: CONFIG.upcoming.gameLinks.boxscore, linkLabel: 'Box score' },
+    { id: 'w18f', text: 'MW picks this week with a cushion. The cautious play is Baltimore and everybody in the room knows it.', side: null, base: 17, agoH: 13, link: CONFIG.upcoming.gameLinks.pbp, linkLabel: 'Play-by-play' }
   ];
 
   var sortMode = 'hot';

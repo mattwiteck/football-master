@@ -19,8 +19,8 @@
 
   --mw:            #4b8fd6;   /* MW, on badges and the fan bar */
   --drj:           #e8434f;   /* DrJ, and the error / downvote states */
-  --team-away:     #d6a95f;   /* this week: Commanders gold */
-  --team-home:     #4b8fd6;   /* this week: Giants blue */
+  --team-away:     #4fb3e8;   /* this week: Chargers powder blue */
+  --team-home:     #8f73e0;   /* this week: Ravens purple */
   --live:          #35d07f;
 
   --radius:        18px;
@@ -597,6 +597,8 @@ a { color: inherit; }
   line-height: 1; margin-top: 6px;
   transition: color .3s var(--ease);
 }
+.verdict__tribute[data-state="owed"] .tribute__note { font-style: italic; opacity: .85; }
+
 #awayCol .board__score { color: var(--team-away); }
 #homeCol .board__score { color: var(--team-home); }
 /* Before kickoff the placeholder dash should not read as a team-coloured bar. */
