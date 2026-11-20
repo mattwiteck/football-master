@@ -1152,6 +1152,10 @@ a { color: inherit; }
 .ledger__badge[data-kind="changed"] { color: var(--gold); border-color: rgba(245, 196, 81, .4); }
 .ledger__badge[data-kind="locked"]  { color: var(--text-faint); }
 .ledger__what b { color: var(--text); }
+.ledger__note {
+  grid-column: 2 / -1; margin-top: 2px;
+  font-size: .78rem; font-style: italic; color: var(--text-faint);
+}
 .ledger__when {
   font-size: .72rem; color: var(--text-faint); white-space: nowrap; font-variant-numeric: tabular-nums;
 }
@@ -1168,6 +1172,7 @@ a { color: inherit; }
   .paper { padding: 26px 16px 18px; }
   .choice { grid-template-columns: auto auto minmax(0, 1fr); gap: 10px; padding: 10px; }
   .ledger__row { grid-template-columns: auto minmax(0, 1fr); row-gap: 4px; }
+  .ledger__note { grid-column: 2; }
   .ledger__when { grid-column: 2; }
   .reveal__actions .btn { width: 100%; }
 }
