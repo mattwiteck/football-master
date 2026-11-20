@@ -19,13 +19,17 @@
      POST /take              token    {game, text}
      POST /vote              token    {game, id, dir}      dir: 1 | -1 | 0
      POST /fan               token    {game, team}
+     POST /override          key      {game, team, who, by, reason}
    ========================================================================== */
 
-import { findProfanity, maskProfanity } from './profanity.js';
+import { findProfanity, isClean, maskProfanity } from './profanity.js';
 
 const TOKEN_TTL_MS = 30 * 24 * 60 * 60 * 1000;   // 30 days
 const MAX_TAKE_LEN = 140;
 const MAX_TAKES = 200;
+
+const REASON_MIN = 8;
+const REASON_MAX = 160;
 
 const NAME_MIN = 3;
 const NAME_MAX = 18;
@@ -163,6 +167,16 @@ function json(env, body, status = 200) {
     status,
     headers: cors(env, { 'Content-Type': 'application/json', 'Cache-Control': 'no-store' })
   });
+}
+
+/** Compare two secrets without leaking their length through timing. */
+function secretsMatch(a, b) {
+  const x = enc.encode(String(a));
+  const y = enc.encode(String(b));
+  if (x.length !== y.length) return false;
+  let diff = 0;
+  for (let i = 0; i < x.length; i++) diff |= x[i] ^ y[i];
+  return diff === 0;
 }
 
 /* ------------------------------------------------------------------ state */
@@ -350,6 +364,79 @@ async function handleFan(request, env, auth) {
   return json(env, { ok: true, state: await writeRecord(env, game, record) });
 }
 
+/* --------------------------------------------------------------- override
+
+   A late ballot. The seal two hours before kickoff exists so neither side can
+   sit on team news until the last minute; it is not there to punish somebody
+   who logged in five minutes late. This route lets the holder of the admin
+   key file a pick after the seal, on four conditions:
+
+     - the game has not kicked off, so nothing is known that was not known
+       before the seal;
+     - the pick goes to whoever's turn it actually was, so an override cannot
+       quietly move the pick to the other person;
+     - a reason is given, and it is written into the ledger where both of them
+       can read it;
+     - the key is a standalone secret, never a session token, so it never has
+       to reach a browser.
+
+   Without ADMIN_SECRET set the route is inert, which is the right default for
+   anyone who clones this and never needs it.
+*/
+async function handleOverride(request, env) {
+  if (!env.ADMIN_SECRET) return json(env, { error: 'override_not_configured' }, 503);
+
+  const supplied = request.headers.get('X-Admin-Key') || '';
+  if (!secretsMatch(supplied, env.ADMIN_SECRET)) return json(env, { error: 'forbidden' }, 403);
+
+  const { game, team, who, by, reason } = await request.json().catch(() => ({}));
+  if (!game || !team || !reason) return json(env, { error: 'bad_request' }, 400);
+
+  const rules = gameRules(env, game);
+  if (!rules) return json(env, { error: 'unknown_game' }, 400);
+  if (rules.teams && rules.teams.indexOf(team) < 0) return json(env, { error: 'unknown_team' }, 400);
+
+  const owner = who || rules.picker;
+  if (rules.picker && owner !== rules.picker) {
+    return json(env, { error: 'not_their_turn', picker: rules.picker }, 403);
+  }
+
+  // Fail closed. With no kickoff time on file there is no way to know the game
+  // has not started, and a pick made after kickoff is not a pick.
+  if (!rules.kickoffAt) return json(env, { error: 'kickoff_unknown' }, 409);
+  if (Date.now() >= Date.parse(rules.kickoffAt)) {
+    return json(env, { error: 'already_kicked_off', kickoffAt: rules.kickoffAt }, 403);
+  }
+
+  const why = String(reason).trim().slice(0, REASON_MAX);
+  if (why.length < REASON_MIN) return json(env, { error: 'reason_too_short', min: REASON_MIN }, 400);
+  if (!isClean(why, true)) return json(env, { error: 'reason_rejected' }, 400);
+
+  const filedBy = String(by || 'admin').trim().slice(0, NAME_MAX) || 'admin';
+
+  const record = await readRecord(env, game);
+  const prev = record.pick;
+  const now = Date.now();
+
+  record.pick = {
+    team,
+    by: owner,
+    at: now,
+    changes: prev ? (prev.changes || 0) + 1 : 0,
+    enteredBy: filedBy
+  };
+  record.ledger.push({
+    at: now,
+    who: owner,
+    kind: 'override',
+    from: prev ? prev.team : null,
+    to: team,
+    note: 'Filed by ' + filedBy + ' on ' + owner + '\u2019s behalf after the ballot sealed: ' + why
+  });
+
+  return json(env, { ok: true, state: await writeRecord(env, game, record) });
+}
+
 /* ------------------------------------------------------------------ entry */
 
 export default {
@@ -373,7 +460,10 @@ export default {
       const rules = gameRules(env, game);
       return json(env, {
         state: record,
-        rules: rules ? { picker: rules.picker, rival: rules.rival, lockAt: rules.lockAt } : null,
+        rules: rules
+          ? { picker: rules.picker, rival: rules.rival, lockAt: rules.lockAt,
+              kickoffAt: rules.kickoffAt || null }
+          : null,
         serverTime: Date.now()
       });
     }
@@ -381,6 +471,7 @@ export default {
     if (request.method !== 'POST') return json(env, { error: 'not_found' }, 404);
     if (path === '/login') return handleLogin(request, env);
     if (path === '/register') return handleRegister(request, env);
+    if (path === '/override') return handleOverride(request, env);
 
     const auth = await requireAuth(request, env);
     if (!auth) return json(env, { error: 'unauthorized' }, 401);

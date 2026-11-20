@@ -7,8 +7,12 @@ compatibility_date = "2026-09-01"
 [vars]
 ALLOW_ORIGIN = "https://mattwiteck.github.io"
 
-# Whose turn it is, and when the ballot seals, per ESPN event id.
-# Update this each week and redeploy — the client cannot override it.
+# Whose turn it is, when the ballot seals, and when the ball is actually
+# kicked, per ESPN event id. Update this each week and redeploy — the client
+# cannot override it.
+#
+# "kickoffAt" is only read by POST /override, which refuses to file a late
+# pick once the game has started. Leave it off and that route fails closed.
 GAMES = '''{
   "401872948": {
     "picker": "DrJ",
@@ -110,7 +114,8 @@ GAMES = '''{
     "picker": "DrJ",
     "rival": "MW",
     "teams": ["IND", "HOU"],
-    "lockAt": "2026-11-19T23:15:00Z"
+    "lockAt": "2026-11-19T23:15:00Z",
+    "kickoffAt": "2026-11-20T01:15:00Z"
   }
 }'''
 

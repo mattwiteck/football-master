@@ -47,8 +47,11 @@ other team automatically.
    and `--team-home`. They are role-based, so only the hex values change.
 8. **Refresh the seeded takes** in `SEED_TAKES` for the new matchup.
 9. **Add the new game to `worker/wrangler.toml`** under `GAMES` with `picker`,
-   `rival`, `teams` and `lockAt` (kickoff minus two hours), then
-   `npx wrangler@4 deploy` from `worker/`.
+   `rival`, `teams`, `lockAt` (kickoff minus two hours) and `kickoffAt`
+   (kickoff itself, straight from the ESPN event date), then
+   `npx wrangler@4 deploy` from `worker/`. `kickoffAt` is what stops a late
+   pick being filed after the game has started; leave it out and the override
+   route refuses to touch that game at all.
 10. **Verify**: both test suites, a headless browser load checking the crown,
     tribute, board and ballot, and the live API reporting the right `picker`.
 11. **Commit and push.** GitHub Pages redeploys on its own.
@@ -104,6 +107,13 @@ tribute: { file: '', title: '', tag: 'Week 10 \u00b7 Thursday game',
 The card still appears under the verdict, but as an IOU: no player, no seek
 bar, just a line naming who owes whom. When the mp3 turns up later, set `file`
 and `title`, delete the `tag`, and the player comes back on its own.
+
+## A late pick
+
+If someone misses the seal, do **not** hand-edit KV. `POST /override` exists for
+exactly this, it checks that the game has not kicked off, and it writes the
+reason into the ledger so the bypass is on the record. The full shape is in the
+README under "Late picks".
 
 ## Standing history
 

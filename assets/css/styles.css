@@ -1151,6 +1151,7 @@ a { color: inherit; }
 .ledger__badge[data-kind="cast"]    { color: var(--live); border-color: rgba(53, 208, 127, .4); }
 .ledger__badge[data-kind="changed"] { color: var(--gold); border-color: rgba(245, 196, 81, .4); }
 .ledger__badge[data-kind="locked"]  { color: var(--text-faint); }
+.ledger__badge[data-kind="override"] { color: var(--drj); border-color: rgba(232, 67, 79, .4); }
 .ledger__what b { color: var(--text); }
 .ledger__note {
   grid-column: 2 / -1; margin-top: 2px;

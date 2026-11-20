@@ -92,9 +92,51 @@ Two things to know before editing it:
   That means you must retype **both** accounts every time, or whichever one you leave out is wiped.
 - **Changes take effect on Deploy**, immediately, with no push to this repo needed.
 
+`ADMIN_SECRET` is the third secret, and the only one that is optional. It unlocks `POST /override`, which
+files a pick after the ballot has sealed — see [Late picks](#late-picks) below. Leave it unset and that
+route answers `503` to everybody, which is the right default. Set it with
+`npx wrangler@4 secret put ADMIN_SECRET` from `worker/` and keep it out of any browser: it is a standalone
+key, not a login, and nothing in the page ever sends it.
+
 `TOKEN_SECRET`, the other secret, signs the session tokens handed out at login. Those tokens last 30 days;
 when one expires the site signs you out and asks you to log in again. Rotating `TOKEN_SECRET` invalidates
 every existing session at once, which is the way to force everyone to sign in fresh.
+
+## Late picks
+
+The ballot seals two hours before kickoff, and the worker will not take a pick after that — not from the
+page, not from a session token, not from the person whose turn it is. That is deliberate: the seal is what
+stops either side sitting on late team news.
+
+Somebody logging in five minutes late is a different problem, so there is one way through:
+
+```
+POST /override
+X-Admin-Key: <ADMIN_SECRET>
+
+{ "game": "401873066", "team": "HOU", "who": "DrJ", "by": "MW",
+  "reason": "DrJ logged in after the seal" }
+```
+
+```bash
+curl -X POST https://football-master-sync.mwiteck.workers.dev/override \
+  -H "X-Admin-Key: $ADMIN_SECRET" -H "Content-Type: application/json" \
+  -d '{"game":"401873066","team":"HOU","who":"DrJ","by":"MW","reason":"DrJ logged in after the seal"}'
+```
+
+It refuses unless all of this holds:
+
+| Check | Why |
+| --- | --- |
+| The key matches `ADMIN_SECRET` | Compared in constant time. A session token is not accepted, so the key never needs to reach a browser. |
+| The game has not kicked off | Read from `kickoffAt` in `GAMES`. **No `kickoffAt`, no override** — it fails closed rather than guess. |
+| `who` is the person whose turn it was | An override is a late ballot, not a way to hand the pick to the other person. |
+| `team` is one of the two in `GAMES` | Same check the ordinary route makes. |
+| `reason` is at least 8 characters and clean | It is published, so it goes through the same profanity filter as a take. |
+
+Every override is visible. The pick carries `enteredBy`, and the ledger row is tagged **Filed late** with a
+note naming who filed it, for whom, and why — on the public page and in the copied ledger text. There is no
+silent version of this, by design: if the seal gets bypassed, both of them should be able to see that it was.
 
 See [worker/README.md](worker/README.md) for the rest of the service.
 

@@ -1310,6 +1310,10 @@
 
   /* ---- ledger ---- */
 
+  // A late ballot filed through the worker's override route reads as what it
+  // is. Anything unrecognised falls back to a plain cast.
+  var LEDGER_BADGE = { changed: 'Changed', override: 'Filed late', locked: 'Locked' };
+
   function renderLedger() {
     var rows = ledger().slice().reverse();   // newest first
     syncChipText();
@@ -1333,12 +1337,12 @@
       var badge = document.createElement('span');
       badge.className = 'ledger__badge';
       badge.setAttribute('data-kind', row.kind);
-      badge.textContent = row.kind === 'changed' ? 'Changed' : 'Cast';
+      badge.textContent = LEDGER_BADGE[row.kind] || 'Cast';
 
       var what = document.createElement('span');
       what.className = 'ledger__what';
       var toName = teamOf(row.to).full;
-      what.innerHTML = row.kind === 'changed' && row.from
+      what.innerHTML = row.from
         ? '<b>' + row.who + '</b> moved off the ' + teamOf(row.from).name + ' to the <b>' + toName + '</b>'
         : '<b>' + row.who + '</b> picked the <b>' + toName + '</b>';
 
