@@ -16,15 +16,16 @@
   /* ---------------------------------------------------------------- config */
 
   var CONFIG = {
-    // ---- the game already in the books: Chargers at Ravens, Mon Nov 16 2026.
-    // MW picked the 0-8 Chargers, so DrJ inherited Baltimore; LA won 23-20.
+    // ---- the game already in the books: Colts at Texans, Thu Nov 19 2026.
+    // DrJ picked Houston and Houston won 26-3, so the crown changes hands for
+    // the first time since week 8. The pick was filed late on his behalf.
     crown: {
-      eventId: '401873065',
-      summaryUrl: 'https://site.api.espn.com/apis/site/v2/sports/football/nfl/summary?event=401873065',
-      label: 'Monday Night Football',
+      eventId: '401873066',
+      summaryUrl: 'https://site.api.espn.com/apis/site/v2/sports/football/nfl/summary?event=401873066',
+      label: 'Thursday Night Football',
       people: {
-        LAC: { who: 'MW', team: 'Los Angeles Chargers' },
-        BAL: { who: 'DrJ', team: 'Baltimore Ravens' }
+        HOU: { who: 'DrJ', team: 'Houston Texans' },
+        IND: { who: 'MW', team: 'Indianapolis Colts' }
       }
     },
 
@@ -41,38 +42,38 @@
       //   tracks: [{ file: '...', title: '...', short: 'Track 1' }, ...]
       file: '',
       title: '',
-      tag: 'Week 10 \u00b7 Monday game',
+      tag: 'Week 11 \u00b7 Thursday game',
       // Optional extra line under the note, for anything worth warning about.
       aside: '',
       url: '',
       host: 'Suno'
     },
 
-    // ---- the game being picked: Colts at Texans, Thu Nov 19 2026
+    // ---- the game being picked: Bengals at Commanders, Mon Nov 23 2026
     upcoming: {
-      eventId: '401873066',
-      summaryUrl: 'https://site.api.espn.com/apis/site/v2/sports/football/nfl/summary?event=401873066',
-      label: 'Thursday Night Football',
-      navLabel: 'Thursday',
+      eventId: '401873078',
+      summaryUrl: 'https://site.api.espn.com/apis/site/v2/sports/football/nfl/summary?event=401873078',
+      label: 'Monday Night Football',
+      navLabel: 'Monday',
       // Clocks went back on Nov 1: 5:15 PM PT is 01:15Z the following day.
-      kickoffISO: '2026-11-20T01:15Z',   // 5:15 PM PT / 8:15 PM ET
+      kickoffISO: '2026-11-24T01:15Z',   // 5:15 PM PT / 8:15 PM ET
       kickoffLabel: '5:15 PM PT',
-      network: 'Prime Video',
+      network: 'ESPN',
       lockMinutesBefore: 120,
       // The pick alternates every game, regardless of who won:
       // DrJ -> MW -> DrJ -> MW. Swap these two each week.
-      picker: 'DrJ',
-      rival: 'MW',                       // who inherits the other team
+      picker: 'MW',
+      rival: 'DrJ',                      // who inherits the other team
       teams: {
-        IND: { city: 'Indianapolis', name: 'Colts', full: 'Indianapolis Colts',
-               logo: 'https://a.espncdn.com/i/teamlogos/nfl/500/scoreboard/ind.png' },
-        HOU: { city: 'Houston', name: 'Texans', full: 'Houston Texans',
-               logo: 'https://a.espncdn.com/i/teamlogos/nfl/500/scoreboard/hou.png' }
+        CIN: { city: 'Cincinnati', name: 'Bengals', full: 'Cincinnati Bengals',
+               logo: 'https://a.espncdn.com/i/teamlogos/nfl/500/scoreboard/cin.png' },
+        WSH: { city: 'Washington', name: 'Commanders', full: 'Washington Commanders',
+               logo: 'https://a.espncdn.com/i/teamlogos/nfl/500/scoreboard/wsh.png' }
       },
       gameLinks: {
-        gamecast: 'https://www.espn.com/nfl/game/_/gameId/401873066',
-        boxscore: 'https://www.espn.com/nfl/boxscore/_/gameId/401873066',
-        pbp: 'https://www.espn.com/nfl/playbyplay/_/gameId/401873066'
+        gamecast: 'https://www.espn.com/nfl/game/_/gameId/401873078',
+        boxscore: 'https://www.espn.com/nfl/boxscore/_/gameId/401873078',
+        pbp: 'https://www.espn.com/nfl/playbyplay/_/gameId/401873078'
       }
     },
 
@@ -1472,12 +1473,12 @@
 
   // Seeded debate topics. Scores are demo starting values; real votes stack on top.
   var SEED_TAKES = [
-    { id: 'w19a', text: 'The winless team won. MW looked at an 0-8 roster, took it anyway, and walked off with a fourth crown.', side: 'MW', base: 36, agoH: 3, link: 'https://www.espn.com/nfl/game/_/gameId/401873065', linkLabel: 'How it ended' },
-    { id: 'w19b', text: 'Everybody said take Baltimore. Everybody was wrong, and the one man who ignored them is still on the throne.', side: null, base: 31, agoH: 5, link: CONFIG.upcoming.gameLinks.boxscore, linkLabel: 'Box score' },
-    { id: 'w19c', text: 'Now 3-7 at 3-6 on a Thursday. There is no safe side here, which may finally be good news for DrJ.', side: 'DrJ', base: 28, agoH: 7, link: CONFIG.upcoming.gameLinks.gamecast, linkLabel: 'Gamecast' },
-    { id: 'w19d', text: 'Indianapolis have lost four of five and still travel better than Houston defend. Pick your poison carefully.', side: null, base: 24, agoH: 9, link: 'https://www.espn.com/nfl/team/_/name/ind/indianapolis-colts', linkLabel: 'Colts hub' },
-    { id: 'w19e', text: 'Houston at home in November is usually worth three points. Usually is doing a lot of work in that sentence.', side: null, base: 21, agoH: 11, link: 'https://www.espn.com/nfl/team/_/name/hou/houston-texans', linkLabel: 'Texans hub' },
-    { id: 'w19f', text: 'Four crowns running and two tributes outstanding. At some point the debt collector comes for the peon.', side: 'MW', base: 18, agoH: 13, link: CONFIG.upcoming.gameLinks.pbp, linkLabel: 'Play-by-play' }
+    { id: 'w20a', text: 'Twenty six to three, and the crown moves for the first time since the start of the month. DrJ is back.', side: 'DrJ', base: 38, agoH: 3, link: 'https://www.espn.com/nfl/game/_/gameId/401873066', linkLabel: 'How it ended' },
+    { id: 'w20b', text: 'The pick that did it was filed late, by MW, on DrJ\u2019s behalf. Read the ledger. It is all in there.', side: null, base: 34, agoH: 5, link: '#ledger', linkLabel: 'The ledger' },
+    { id: 'w20c', text: 'Four straight crowns gone in one Thursday evening, and the man who lost them typed in the winning ballot.', side: 'MW', base: 30, agoH: 7, link: CONFIG.upcoming.gameLinks.boxscore, linkLabel: 'Box score' },
+    { id: 'w20d', text: 'Cincinnati are 7-2 and the best team either of these two has had to pick around in weeks. No hiding now.', side: null, base: 26, agoH: 9, link: 'https://www.espn.com/nfl/team/_/name/cin/cincinnati-bengals', linkLabel: 'Bengals hub' },
+    { id: 'w20e', text: 'Washington at 3-5-1 have already swung one crown this season. Landover in November is a strange place.', side: null, base: 22, agoH: 11, link: 'https://www.espn.com/nfl/team/_/name/wsh/washington-commanders', linkLabel: 'Commanders hub' },
+    { id: 'w20f', text: 'MW picks on Monday, now wearing the apron. Three tributes outstanding and he has just joined the queue.', side: 'MW', base: 19, agoH: 13, link: CONFIG.upcoming.gameLinks.pbp, linkLabel: 'Play-by-play' }
   ];
 
   var sortMode = 'hot';

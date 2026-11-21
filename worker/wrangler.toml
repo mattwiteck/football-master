@@ -116,6 +116,13 @@ GAMES = '''{
     "teams": ["IND", "HOU"],
     "lockAt": "2026-11-19T23:15:00Z",
     "kickoffAt": "2026-11-20T01:15:00Z"
+  },
+  "401873078": {
+    "picker": "MW",
+    "rival": "DrJ",
+    "teams": ["CIN", "WSH"],
+    "lockAt": "2026-11-23T23:15:00Z",
+    "kickoffAt": "2026-11-24T01:15:00Z"
   }
 }'''
 

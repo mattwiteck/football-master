@@ -138,7 +138,8 @@ Week numbers are the ones used in the file names. Thursday opens each week.
 | 9b | Bills at Vikings, Nov 9 | MW took BUF | BUF 23-6 | MW | `W9b` "Hail To The Master" |
 | 10a | Commanders at Giants, Nov 12 | DrJ took NYG | WSH 24-21 | MW | none handed in |
 | 10b | Chargers at Ravens, Nov 16 | MW took LAC | LAC 23-20 | MW | none handed in |
-| 11a | Colts at Texans, Nov 19 | DrJ picks | — | — | — |
+| 11a | Colts at Texans, Nov 19 | DrJ took HOU (filed late) | HOU 26-3 | DrJ | none handed in |
+| 11b | Bengals at Commanders, Nov 23 | MW picks | — | — | — |
 
 The badge on the card reads the week and the day straight off the file name, so
 the file name is the source of truth for what gets displayed.
