@@ -1137,6 +1137,16 @@
     var pick = currentPick();
     var locked = isLocked();
 
+    // Whose turn it is is configuration, not copy. This line used to be
+    // hand-written in the HTML, so it read "DrJ chooses" on every Monday
+    // game from September on, while the ballot itself was MW's.
+    var intro = $('pickIntro');
+    if (intro) {
+      intro.innerHTML = 'This week <b>' + CONFIG.upcoming.picker + '</b> chooses. <b>' +
+        CONFIG.upcoming.rival + '</b> inherits whatever is left on the table. ' +
+        'The ballot seals two hours before kickoff.';
+    }
+
     if (stageOverride === 'transit') { setStage('transit'); showPanels('tubePanel'); return; }
 
     // Locked with no pick on file: nothing to do but say so.
@@ -1222,7 +1232,8 @@
     card.style.animation = '';
 
     // Mirror the decision up in the hero strip.
-    $('nextUpText').innerHTML = CONFIG.upcoming.teams.ATL.name + ' at ' + CONFIG.upcoming.teams.GB.name +
+    var sides = Object.keys(CONFIG.upcoming.teams);
+    $('nextUpText').innerHTML = teamOf(sides[0]).name + ' at ' + teamOf(sides[1]).name +
       ' &middot; <b>' + pick.by + '</b> picked the <b>' + team.name + '</b>';
   }
 
@@ -1424,7 +1435,7 @@
 
   /* ============================================================= FAN POLL */
 
-  function fanKeys() { return Object.keys(CONFIG.upcoming.teams); }   // ['ATL','GB']
+  function fanKeys() { return Object.keys(CONFIG.upcoming.teams); }   // away first, then home
 
   function renderFanPoll() {
     var k = fanKeys();
