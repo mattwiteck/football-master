@@ -54,6 +54,8 @@ other team automatically.
    route refuses to touch that game at all.
 10. **Verify**: both test suites, a headless browser load checking the crown,
     tribute, board and ballot, and the live API reporting the right `picker`.
+    Also run the drift checks below — step 6 only covers elements that have
+    an `id`, and anything hand-written without one will not be caught by it.
 11. **Commit and push.** GitHub Pages redeploys on its own.
 
 ## The tribute song
@@ -107,6 +109,39 @@ tribute: { file: '', title: '', tag: 'Week 10 \u00b7 Thursday game',
 The card still appears under the verdict, but as an IOU: no player, no seek
 bar, just a line naming who owes whom. When the mp3 turns up later, set `file`
 and `title`, delete the `tag`, and the player comes back on its own.
+
+## Drift checks
+
+Three bugs have come from a fact that changes every week being written into the
+markup or the code instead of read from `CONFIG`. None of them broke the
+ballot, which the worker enforces; they just said the wrong thing for weeks:
+
+- "The Pick" read *"This week DrJ chooses"* on every Monday game from September
+  to November, because the line was hand-written with no `id`.
+- The hero strip reached for `CONFIG.upcoming.teams.ATL`, gone since week 3, and
+  threw on every reveal.
+- The copied ledger header carried week 3's matchup all season.
+
+So, as part of step 10:
+
+```bash
+node tools/check-copy.mjs
+```
+
+It asserts four things, and exits non-zero on any of them:
+
+1. Every line of `index.html` naming DrJ or MW sits inside an element whose
+   `id` app.js actually writes to. (The footer byline is about the rivalry
+   itself, not this week, and is exempt.)
+2. No team or person is reached for by hardcoded abbreviation in app.js.
+3. Every `gameId` link in the page matches `CONFIG.upcoming.eventId`.
+4. `picker` and `rival` are two different people.
+
+**The rule the copy has to match:** the pick alternates every game. Because
+Thursday always opens the week, that has worked out to **DrJ on Thursday, MW on
+Monday**, every game since week 3 without exception. The alternation is the
+rule, not the weekday — but if a weekday and a picker ever disagree with the
+history table below, something has drifted.
 
 ## A late pick
 
